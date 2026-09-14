@@ -1,10 +1,6 @@
-# 서버 시작 api 연결
-
-
-
-
-
 from fastapi import FastAPI
+from .file_api import router as file_router
+from .auth_api import router as auth_router
 
 from .file_api import router                            # .으로 상대경로 사용
 
