@@ -1,3 +1,4 @@
+# 현재 server.main에 등록되지 않은 이전 회원가입 서버 코드입니다. 현재 회원가입 API는 server/auth_api.py에서 제공합니다.
 """회원가입 클라이언트 API. PySide6 가입 화면의 버튼 핸들러에서 호출하세요."""
 from __future__ import annotations
 import requests

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>1280</width><height>800</height></rect></property>
+  <property name="windowTitle"><string>JEWEL Cloud - 회원가입</string></property>
+  <property name="styleSheet"><string notr="true">QWidget{background:white;} QLabel#title_label{color:#0b3d63;font-size:72px;font-weight:800;} QLineEdit{background:#eeeeee;border:0;border-radius:7px;padding:13px 18px;font-size:19px;min-height:38px;} QPushButton{background:#2379aa;color:white;border:0;border-radius:7px;padding:12px 14px;font-size:14px;min-width:130px;} QPushButton#signup_button{font-size:24px;min-height:60px;}</string></property>
+  <layout class="QVBoxLayout" name="main_layout">
+   <property name="leftMargin"><number>320</number></property><property name="topMargin"><number>0</number></property><property name="rightMargin"><number>320</number></property><property name="bottomMargin"><number>20</number></property><property name="spacing"><number>9</number></property>
+   <item><widget class="QLabel" name="title_label"><property name="sizePolicy"><sizepolicy hsizetype="Preferred" vsizetype="Fixed"><horstretch>0</horstretch><verstretch>0</verstretch></sizepolicy></property><property name="minimumSize"><size><width>0</width><height>100</height></size></property><property name="maximumSize"><size><width>16777215</width><height>100</height></size></property><property name="text"><string>JEWEL Cloud</string></property><property name="alignment"><set>Qt::AlignCenter</set></property></widget></item>
+   <item><widget class="QLineEdit" name="name_input"><property name="placeholderText"><string>이름</string></property></widget></item>
+   <item><layout class="QHBoxLayout" name="email_layout"><item><widget class="QLineEdit" name="email_input"><property name="placeholderText"><string>구글 이메일</string></property></widget></item><item><widget class="QPushButton" name="check_email_button"><property name="text"><string>아이디 중복</string></property></widget></item></layout></item>
+   <item><layout class="QHBoxLayout" name="code_layout"><item><widget class="QLineEdit" name="code_input"><property name="placeholderText"><string>인증번호</string></property></widget></item><item><widget class="QPushButton" name="send_code_button"><property name="text"><string>인증번호 발송</string></property></widget></item><item><widget class="QPushButton" name="verify_code_button"><property name="text"><string>인증번호 확인</string></property></widget></item></layout></item>
+   <item><widget class="QLabel" name="timer_label"><property name="sizePolicy"><sizepolicy hsizetype="Preferred" vsizetype="Fixed"><horstretch>0</horstretch><verstretch>0</verstretch></sizepolicy></property><property name="minimumSize"><size><width>0</width><height>24</height></size></property><property name="maximumSize"><size><width>16777215</width><height>24</height></size></property><property name="styleSheet"><string>color:#777777;margin-left:18px;</string></property><property name="text"><string>인증번호를 발송하면 유효시간이 표시됩니다.</string></property></widget></item>
+   <item><widget class="QLineEdit" name="password_input"><property name="placeholderText"><string>비밀번호</string></property><property name="echoMode"><enum>QLineEdit::Password</enum></property></widget></item>
+   <item><widget class="QLineEdit" name="password_confirm_input"><property name="placeholderText"><string>비밀번호 확인</string></property><property name="echoMode"><enum>QLineEdit::Password</enum></property></widget></item>
+   <item><widget class="QPushButton" name="signup_button"><property name="text"><string>회원가입</string></property></widget></item>
+  </layout>
+ </widget>
+ <resources/><connections/>
+</ui>
