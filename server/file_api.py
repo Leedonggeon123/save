@@ -25,7 +25,7 @@
 
 
 
-
+from .auth_db import db                                                                 # db연결
 from pathlib import Path                                                            # 파일 경로를 다루는 도구 
 import shutil                                                                        # 파일을 복사하는 도구 
 
@@ -33,7 +33,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile                  
 
 from fastapi.responses import FileResponse
 
-from .file_service import (                                                     # .으로 상대 경로 사용 
+from .file_service import (                                                         # .으로 상대 경로 사용 
     get_unique_path,
     list_files,
     delete_file as remove_file,
@@ -127,4 +127,56 @@ def delete_server_file(file_path: str):
     return {
         "message": "파일 삭제 완료",
         "file_path": file_path,
+    }
+    
+    
+
+@router.put("/settings/file-limit")
+def update_file_limit(user_id: int, file_limit: int):
+    """
+    파일 설정에서 입력한 제한값을 USER.file_limit에 저장합니다.
+    file_limit은 Byte 단위입니다.
+    0이면 등급 기본 제한을 사용합니다.
+    """
+
+    # 음수 제한값 방지
+    if file_limit < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="파일 제한값은 0 이상이어야 합니다."
+        )
+
+    with db() as cursor:
+        # 사용자 존재 여부 확인
+        cursor.execute(
+            """
+            SELECT user_id
+            FROM `USER`
+            WHERE user_id = %s
+            """,
+            (user_id,)
+        )
+
+        user = cursor.fetchone()
+
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="사용자를 찾을 수 없습니다."
+            )
+
+        # USER 테이블의 파일 제한값 수정
+        cursor.execute(
+            """
+            UPDATE `USER`
+            SET file_limit = %s
+            WHERE user_id = %s
+            """,
+            (file_limit, user_id)
+        )
+
+    return {
+        "saved": True,
+        "user_id": user_id,
+        "file_limit": file_limit
     }

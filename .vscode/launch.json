@@ -6,12 +6,12 @@
             "type": "debugpy",
             "request": "launch",
             "module": "client.app",
-            "python": "${workspaceFolder}/venv/bin/python",
+            "python": "${workspaceFolder}/.venv/bin/python",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
-                "JEWEL_SERVER_URL": "http://127.0.0.1:8000"
+                "JEWEL_SERVER_URL": "http://10.10.10.107:8000"
             }
         }
     ]

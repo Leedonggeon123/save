@@ -223,3 +223,15 @@ def update_profile(request: ProfileUpdate):
         else:
             c.execute("UPDATE `USER` SET name=%s WHERE user_id=%s", (request.name, request.user_id))
     return {"saved": True, "message": "개인정보가 수정되었습니다."}
+
+
+
+
+
+
+
+
+
+
+
+                                                                                        # 파일 설정 부분
