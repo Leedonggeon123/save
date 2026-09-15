@@ -15,7 +15,7 @@ import shutil
 
 
 
-def get_unique_path(folder: Path, filename: str) -> Path:                           # 이 함수는 저장할 파일의 최종 경로를 정하는 함수 인자(folder는 파일을 저장할 폴더 filename은 저장한 파일 이름) (반환값 중복되지 않는 최종 파일 경로)
+def get_unique_path(folder: Path, filename: str) -> Path:                               # 이 함수는 저장할 파일의 최종 경로를 정하는 함수 인자(folder는 파일을 저장할 폴더 filename은 저장한 파일 이름) (반환값 중복되지 않는 최종 파일 경로)
     original_path = folder / filename                                       # 폴더와 파일 이름을 합쳐서 원래 저장 경로를 만듬
 
     if not original_path.exists():                                              # 같은 이름의 파일이 없으면  원래 경로를 그대로 사용
@@ -117,3 +117,35 @@ def download_file(                                              # 이 함수는 
     shutil.copy2(source, save_path)                                                 # 서버 파일을 사용자 폴더로 복사
 
     return str(save_path)                                                           # 실제로 저장된 파일 경로를 반환
+
+
+
+
+def get_storage_usage(user_id: int, storage_root: str = "storage") -> int:
+    """
+    사용자가 현재 사용 중인 전체 파일 용량을 계산합니다.
+
+    반환값은 Byte 단위입니다.
+    예: 1MB 파일 1개 → 1048576
+    """
+
+    # 사용자별 저장 폴더 경로를 만듭니다.
+    # 예: storage/1
+    user_folder = Path(storage_root) / str(user_id)
+
+    # 사용자 폴더가 없으면 사용량은 0Byte입니다.
+    if not user_folder.exists():
+        return 0
+
+    # 전체 파일 용량을 저장할 변수입니다.
+    total_size = 0
+
+    # 사용자 폴더 안의 파일과 하위 폴더를 모두 확인합니다.
+    for file_path in user_folder.rglob("*"):
+
+        # 폴더는 제외하고 실제 파일만 계산합니다.
+        if file_path.is_file():
+            total_size += file_path.stat().st_size
+
+    # 계산된 전체 용량을 Byte 단위로 반환합니다.
+    return total_size

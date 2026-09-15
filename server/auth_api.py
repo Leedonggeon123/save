@@ -85,13 +85,9 @@ def send_gmail_code(email: str, code: str) -> None:
     except (OSError, smtplib.SMTPException) as exc:
         raise HTTPException(502, "인증 메일 전송에 실패했습니다.") from exc
 
-# FastAPI 시작 시 인증번호 테이블을 준비
-@router.on_event("startup")
-def startup_auth() -> None:
-    """서버 시작 시 인증번호 저장 테이블을 준비합니다."""
-    ensure_auth_table()
-    ensure_admin_column()
-
+    
+    
+    
 # 인증번호를 생성·저장하고 Gmail로 발송
 @router.post("/signup/request-code", status_code=202)
 def request_code(request: EmailRequest):
@@ -167,19 +163,62 @@ def verify_code(request: CodeCheckRequest):
             raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
     return {"verified": True, "message": "인증번호가 일치합니다."}
 
+
+
+
+
 # USER에서 계정을 조회하고 비밀번호 검증
 @router.post("/login")
 def login(request: LoginRequest):
     """이메일과 해시 비밀번호를 비교해 로그인합니다."""
-    with db() as c:
-        c.execute("SELECT user_id,email,password_hash,name,is_banned,is_admin FROM `USER` WHERE email=%s", (str(request.email),)); user = c.fetchone()
-    if not user or not verify_password(request.password, user["password_hash"]):
-        raise HTTPException(401, "이메일 또는 비밀번호가 올바르지 않습니다.")
-    if user["is_banned"]: raise HTTPException(403, "정지된 계정입니다.")
-    # Temporary compatibility token. Replace with the project's shared JWT/session service when ready.
-    token = secrets.token_urlsafe(32)
-    return {"token": token, "access_token": token, "user_id": user["user_id"], "name": user["name"], "is_admin": bool(user.get("is_admin", 0))}
 
+
+    with db() as c:
+        c.execute(
+            """
+            SELECT user_id, email, password_hash, name, is_banned, is_admin
+            FROM `USER`
+            WHERE email=%s
+            """,
+            (str(request.email),)
+        )
+
+        # DB에서 사용자 정보를 가져옵니다.
+        user = c.fetchone()
+    
+     # 사용자가 없거나 비밀번호가 틀린 경우 로그인 실패 처리
+    if not user or not verify_password(
+        request.password,
+        user["password_hash"]
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="이메일 또는 비밀번호가 올바르지 않습니다."
+        )
+
+    # 정지된 계정인지 확인
+    if user["is_banned"]:
+        raise HTTPException(
+            status_code=403,
+            detail="정지된 계정입니다."
+        )
+
+    # 로그인 성공 시 사용할 임시 토큰 생성
+    token = secrets.token_urlsafe(32)
+
+    # 클라이언트에 로그인 정보를 반환
+    return {
+        "token": token,
+        "access_token": token,
+        "user_id": user["user_id"],
+        "name": user["name"],
+        "is_admin": bool(user.get("is_admin", 0))
+    }
+    
+    
+    
+    
+    
 # 기본 이메일을 USER_SETTINGS에 저장하거나 수정
 @router.put("/settings/default-sender-email")
 def update_default_sender_email(request: SenderEmailUpdate):

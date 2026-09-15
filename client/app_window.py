@@ -107,31 +107,31 @@ class JewelClient(QStackedWidget):
    
    
    
-    def show_file(self):                # 파일 클릭시 
+    def show_file(self):                            # 파일 클릭시
         loader = QUiLoader()
 
-        file_ui_path = (
-            PROJECT_ROOT
-            / "source"
-            / "designer_ui"
-            / "file_menu.ui"
-        )
+        # FilePage가 아직 없을 때만 새로 생성
+        if not hasattr(self, "file_page"):
+            file_ui_path = (
+                PROJECT_ROOT
+                / "source"
+                / "designer_ui"
+                / "file_menu.ui"
+            )
 
-        self.file_ui = loader.load(str(file_ui_path))
+            self.file_ui = loader.load(str(file_ui_path))
 
-        user_id = self.login_page.user_id or 2
-        grade = "일반"
-        file_limit = 0
+            self.file_page = FilePage(
+                self.file_ui,
+                self.session.user_id,
+                self.session.grade,
+                self.session.file_limit
+            )
 
-        self.file_page = FilePage(
-            self.file_ui,
-            user_id,
-            grade,
-            file_limit
-        )
-
+        # 기존 FilePage를 다시 사용
         self.file_page.load_file_list()
-        self.file_ui.show()
+        self.file_page.load_storage_usage()             # 클라우드 용량 확인
+        self.file_page.ui.show()
 
     
     def show_file_settings(self):               # 파일 설정 클릭시 
@@ -161,9 +161,9 @@ class JewelClient(QStackedWidget):
 
             self.file_ui = loader.load(str(file_ui_path))
 
-            user_id = self.login_page.user_id           # 로그인한 아이디
-            grade = "일반"
-            file_limit = 0
+            user_id = self.session.user_id           # 로그인한 아이디
+            grade = self.session.grade
+            file_limit = self.session.file_limit
 
             self.file_page = FilePage(
                 self.file_ui,

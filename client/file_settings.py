@@ -12,6 +12,7 @@ class File_Setting_Page:
         self.ui = ui
         self.user_id = user_id
         self.file_page = file_page                                                  # main에서 전달받은 file_page 객체를 저장 (다운로드 경로받기 위해 사용)
+        self.file_size_limit = 0
         self.receive_path = Path("/mnt/c/Users/AIOT/Desktop")                       # 선택 안했을때 기본경로
         
         self.ui.receive_path_btn.clicked.connect(self.set_receive_path)                 # 받는 위치 설정 버튼
@@ -46,7 +47,7 @@ class File_Setting_Page:
         # 0은 개인 제한을 해제하고 등급 기본 제한을 사용한다는 뜻
         if size == 0:
             requested_limit = 0
-
+            
             try:
                 # 0을 FastAPI로 보내 DB에 저장
                 response = requests.put(
@@ -55,9 +56,11 @@ class File_Setting_Page:
                         "user_id": self.user_id,
                         "file_limit": requested_limit
                     },
-                    timeout=5
+                    timeout=15
                 )
+                            
 
+                
             except requests.RequestException as error:
                 QMessageBox.warning(
                     self.ui,
@@ -110,7 +113,7 @@ class File_Setting_Page:
                     "user_id": self.user_id,
                     "file_limit": requested_limit
                 },
-                timeout=5
+                timeout=15
             )
 
         except requests.RequestException as error:
@@ -138,6 +141,17 @@ class File_Setting_Page:
                 
             
             
+
+
+
+
+
+
+
+
+
+
+
 # app = QApplication(sys.argv)                  # 호출을 메인py에서 
 
 # loader = QUiLoader()

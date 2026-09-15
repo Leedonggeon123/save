@@ -196,8 +196,41 @@ class FilePage:
                 )
 
         self.load_file_list()                # 삭제 후 테이블 새로고침
+   
+   
         
         
+        
+        
+    def load_storage_usage(self):
+        """
+        서버에서 현재 사용 중인 전체 파일 용량을 가져옵니다.
+        """
+
+        try:
+            response = requests.get(
+                f"{FAST_URL}/files/usage/{self.user_id}",
+                timeout=15
+            )
+
+            if response.status_code != 200:
+                print("사용 용량 조회 실패:", response.text)
+                return
+
+            data = response.json()
+
+            used_mb = data["used_mb"]
+
+            print(f"현재 사용 용량: {used_mb}MB")
+
+        except requests.RequestException as error:
+            print("사용 용량 조회 중 서버 연결 실패:", error)     
+            
+            
+        
+        
+        
+         
         
 # app = QApplication(sys.argv)                  # 호출을 메인py에서
 
