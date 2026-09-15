@@ -151,7 +151,7 @@ class JewelClient(QStackedWidget):
 
             self.file_ui = loader.load(str(file_ui_path))
 
-            user_id = self.login_page.user_id or 2
+            user_id = self.login_page.user_id           # 로그인한 아이디
             grade = "일반"
             file_limit = 0
 

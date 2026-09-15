@@ -46,6 +46,33 @@ router = APIRouter(                                                             
 )
 
 
+
+@router.get("/settings/{user_id}")                                              # 
+def get_file_settings(user_id: int):
+    # user_id로 DB에서 등급과 파일 제한값 조회
+    with db() as cursor:
+        cursor.execute(
+            """
+            SELECT grade, file_limit
+            FROM `USER`
+            WHERE user_id = %s
+            """,
+            (user_id,)
+        )
+
+        user = cursor.fetchone()
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="사용자를 찾을 수 없습니다."
+        )
+
+    return {
+        "grade": user["grade"],
+        "file_limit": user["file_limit"]
+    }
+
 @router.post("/upload")                                                             # POST/files/upload 주소를 만듬 
 async def upload_file(                                                              # 서버가 받을 값을 정하는 부분                                                                     
     user_id: int,                                                                   # 파일을 올린 사용자 번호
