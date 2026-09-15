@@ -3,7 +3,7 @@ import os, sys, requests
 from PySide6.QtWidgets import QApplication, QMessageBox
 from login_design import LoginWidget
 
-SERVER_URL = os.getenv("JEWEL_SERVER_URL", "http://127.0.0.1:8000")
+SERVER_URL = os.getenv("JEWEL_SERVER_URL", "http://10.10.10.107:8000")
 
 class ClientApp(LoginWidget):
     def __init__(self):

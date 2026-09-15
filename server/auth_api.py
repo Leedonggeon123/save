@@ -10,7 +10,7 @@ from email.message import EmailMessage
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 import pymysql
-from .auth_db import db, ensure_auth_table, hash_password, verify_password
+from .auth_db import db, ensure_auth_table, ensure_admin_column, hash_password, verify_password
 
 # 모든 인증 URL 앞에 /api를 붙이는 라우터
 router = APIRouter(prefix="/api", tags=["auth"])
@@ -90,6 +90,7 @@ def send_gmail_code(email: str, code: str) -> None:
 def startup_auth() -> None:
     """서버 시작 시 인증번호 저장 테이블을 준비합니다."""
     ensure_auth_table()
+    ensure_admin_column()
 
 # 인증번호를 생성·저장하고 Gmail로 발송
 @router.post("/signup/request-code", status_code=202)
@@ -171,13 +172,13 @@ def verify_code(request: CodeCheckRequest):
 def login(request: LoginRequest):
     """이메일과 해시 비밀번호를 비교해 로그인합니다."""
     with db() as c:
-        c.execute("SELECT user_id,email,password_hash,name,is_banned FROM `USER` WHERE email=%s", (str(request.email),)); user = c.fetchone()
+        c.execute("SELECT user_id,email,password_hash,name,is_banned,is_admin FROM `USER` WHERE email=%s", (str(request.email),)); user = c.fetchone()
     if not user or not verify_password(request.password, user["password_hash"]):
         raise HTTPException(401, "이메일 또는 비밀번호가 올바르지 않습니다.")
     if user["is_banned"]: raise HTTPException(403, "정지된 계정입니다.")
     # Temporary compatibility token. Replace with the project's shared JWT/session service when ready.
     token = secrets.token_urlsafe(32)
-    return {"token": token, "access_token": token, "user_id": user["user_id"], "name": user["name"]}
+    return {"token": token, "access_token": token, "user_id": user["user_id"], "name": user["name"], "is_admin": bool(user.get("is_admin", 0))}
 
 # 기본 이메일을 USER_SETTINGS에 저장하거나 수정
 @router.put("/settings/default-sender-email")
