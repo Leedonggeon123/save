@@ -15,11 +15,14 @@ class SettingsPage(QWidget):
     """설정 메뉴 화면"""
 
     # go_back은 메인 화면, logout은 로그인 화면, show_personal은 개인설정으로 연결
-    def __init__(self, go_back, logout, show_personal):
+    def __init__(self, go_back, logout, show_personal, show_file_settings):
         super().__init__()
         self.go_back = go_back
         self.logout = logout
         self.show_personal = show_personal
+        
+        self.show_file_settings = show_file_settings                    # 파일 설정 버튼을 클릭했을떄
+        
         self.setStyleSheet(
             "QWidget { background: white; }"
             "QLabel#brand { color:#0b3d63; font-size:28px; font-weight:800; }"
@@ -79,7 +82,7 @@ class SettingsPage(QWidget):
 
     # 파일 설정. 연결 안 됨
     def open_file(self):
-        print("파일설정 버튼 클릭", flush=True)
+        self.show_file_settings()                                                               # 파일 설정 호출            
 
 
 # 왼쪽 카테고리와 오른쪽 상세 페이지를 함께 관리하는 개인설정 화면
