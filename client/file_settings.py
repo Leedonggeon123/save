@@ -49,7 +49,6 @@ class File_Setting_Page:
                  
                                                                                         
             if requested_limit > self.file_page.grade_default_limit:                                    # 등급 기본 제한보다 크게 설정하는지 확인
-                
                 max_mb = (self.file_page.grade_default_limit / (1024 * 1024))
 
                 QMessageBox.warning(
