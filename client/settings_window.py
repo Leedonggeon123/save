@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QFormLayout,QHBoxLayout,QLabel,QMessageBox,QPushB
 from client.components.logout_button import LogoutButton
 from client.components.upgrade_button import UpgradeButton
 from client.ui_common import PROJECT_ROOT, SERVER_URL, logo_pixmap
+from client.session import UserSession
 
 # 설정 메뉴에서 개인·메일·파일 설정으로 이동하는 화면
 class SettingsPage(QWidget):
@@ -89,13 +90,11 @@ class PersonalSettingsPage(QWidget):
     """개인설정의 왼쪽 카테고리와 오른쪽 내용 영역"""
 
     # go_back은 설정 메뉴, logout은 로그인 화면으로 돌아가는 콜백
-    def __init__(self, go_back, logout):
+    def __init__(self, go_back, logout, session=None):
         super().__init__()
         self.go_back = go_back
         self.logout = logout
-        self.user_id = None
-        self.user_name = ""
-        self.user_email = ""
+        self.session = session or UserSession()
         self.setStyleSheet(
             "QWidget { background:white; }"
             "QWidget#sidebar { background:#e5f4fc; border-right:1px solid #444; }"
@@ -272,14 +271,14 @@ class PersonalSettingsPage(QWidget):
     # 입력 완료 시 USER_SETTINGS.default_sender_email을 서버에 저장
     def save_default_email(self):
         """USER_SETTINGS.default_sender_email을 자동으로 수정"""
-        if not self.user_id:
+        if not self.session.user_id:
             print("기본 이메일 저장 대기: 로그인 사용자 정보가 없습니다.", flush=True)
             return
         email = self.sender_email_input.text().strip()
         try:
             response = requests.put(
                 f"{SERVER_URL}/api/settings/default-sender-email",
-                json={"user_id": self.user_id, "default_sender_email": email},
+                json={"user_id": self.session.user_id, "default_sender_email": email},
                 timeout=10,
             )
             if response.ok:
@@ -292,11 +291,11 @@ class PersonalSettingsPage(QWidget):
     # 개인설정 진입 시 로그인한 사용자의 기본 이메일을 서버에서 불러옴
     def load_default_email(self):
         """개인설정 화면을 열 때 DB에 저장된 기본 이메일을 불러옴"""
-        if not self.user_id:
+        if not self.session.user_id:
             return
         try:
             response = requests.get(
-                f"{SERVER_URL}/api/settings/default-sender-email/{self.user_id}",
+                f"{SERVER_URL}/api/settings/default-sender-email/{self.session.user_id}",
                 timeout=10,
             )
             if response.ok:
@@ -370,17 +369,18 @@ class PersonalSettingsPage(QWidget):
         if password and password != password_confirm:
             QMessageBox.warning(self, "입력 오류", "비밀번호가 서로 일치하지 않습니다.")
             return
-        if not self.user_id:
+        if not self.session.user_id:
             QMessageBox.warning(self, "저장 실패", "로그인 사용자 정보를 확인할 수 없습니다.")
             return
         try:
             response = requests.put(
                 f"{SERVER_URL}/api/settings/profile",
-                json={"user_id": self.user_id, "name": name, **({"password": password} if password else {})},
+                json={"user_id": self.session.user_id, "name": name, **({"password": password} if password else {})},
                 timeout=10,
             )
             if response.ok:
                 QMessageBox.information(self, "수정 완료", "개인정보가 수정되었습니다.")
+                self.session.name = name
                 self.password_input.clear()
                 self.password_confirm_input.clear()
             else:

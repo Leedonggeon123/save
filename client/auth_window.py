@@ -11,12 +11,13 @@ from PySide6.QtWidgets import QLabel, QMessageBox, QWidget
 from source.designer_ui.login_design import Ui_LoginPage  # Designer에서 생성된 로그인 UI
 from client.sign import SignupWindow  # 회원가입 화면을 재사용
 from client.ui_common import SERVER_URL  # 서버 주소 환경설정
+from client.session import UserSession
 
 
 class LoginPage(QWidget):
     """로그인 UI를 표시하고 로그인 요청을 처리"""
 
-    def __init__(self, show_signup, show_dashboard, show_admin=None):
+    def __init__(self, show_signup, show_dashboard, show_admin=None, session=None):
         super().__init__()
         # 로그인 화면
         self.ui = Ui_LoginPage() 
@@ -56,16 +57,7 @@ class LoginPage(QWidget):
         # 로그인 성공 후 호출할 메인 화면 전환 함수
         self.show_dashboard = show_dashboard
         self.show_admin = show_admin  
-
-        # 로그인 결과와 사용자 정보를 저장할 상태값을 초기화
-        # 서버가 반환한 임시 인증 토큰을 저장
-        self.access_token = None 
-        # 로그인한 사용자의 DB ID를 저장
-        self.user_id = None 
-        # 로그인한 사용자의 이름을 저장
-        self.user_name = "" 
-        # 로그인에 사용한 이메일을 저장
-        self.user_email = ""  
+        self.session = session or UserSession()
 
         # Designer 버튼 클릭 시 각각의 동작 함수를 연결
         # 회원가입 버튼을 회원가입 페이지로 연결
@@ -95,20 +87,14 @@ class LoginPage(QWidget):
                 # 서버 응답 JSON을 Python dict로 변환
                 data = response.json()  
                 # 인증 토큰을 저장
-                self.access_token = data.get("token") 
-                # 사용자 ID를 저장
-                self.user_id = data.get("user_id") 
-                # 사용자 이름을 저장
-                self.user_name = data.get("name", "")  
-                # 개인정보 화면에 표시할 이메일을 저장
-                self.user_email = email  
-                is_admin = bool(data.get("is_admin", False))  # 서버가 반환한 관리자 여부입니다.
+                self.session.update_from_login(data, email) 
+                is_admin = self.session.is_admin  # 서버가 반환한 관리자 여부입니다.
                 print("로그인 성공: 메인 화면으로 이동합니다.")  
                 # JewelClient에 메인 화면 전환을 요청
                 if is_admin and self.show_admin:
-                    self.show_admin(self.access_token)
+                    self.show_admin(self.session.access_token)
                 else:
-                    self.show_dashboard(self.access_token)  
+                    self.show_dashboard(self.session.access_token)  
             else:
                 # 서버가 4xx/5xx를 반환하면 서버의 오류 메시지를 팝업으로 표시
                 detail = response.json().get("detail", "로그인에 실패했습니다.")
