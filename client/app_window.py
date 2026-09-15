@@ -97,7 +97,7 @@ class JewelClient(QStackedWidget):
    
    
    
-    def show_file(self):
+    def show_file(self):                # 파일 클릭시 
         loader = QUiLoader()
 
         file_ui_path = (
@@ -124,7 +124,7 @@ class JewelClient(QStackedWidget):
         self.file_ui.show()
 
     
-    def show_file_settings(self):
+    def show_file_settings(self):               # 파일 설정 클릭시 
         loader = QUiLoader()
 
         # 파일 설정 UI만 불러오기

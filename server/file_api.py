@@ -28,6 +28,7 @@
 from .auth_db import db                                                                 # db연결
 from pathlib import Path                                                            # 파일 경로를 다루는 도구 
 import shutil                                                                        # 파일을 복사하는 도구 
+from pydantic import BaseModel
 
 from fastapi import APIRouter, File, HTTPException, UploadFile                       # FastAPI에서 필요한 기능을 가져오기
 

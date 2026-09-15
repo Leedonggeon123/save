@@ -16,7 +16,7 @@ from client.ui_common import SERVER_URL  # 서버 주소 환경설정
 class LoginPage(QWidget):
     """로그인 UI를 표시하고 로그인 요청을 처리"""
 
-    def __init__(self, show_signup, show_dashboard):
+    def __init__(self, show_signup, show_dashboard, show_admin=None):
         super().__init__()
         # 로그인 화면
         self.ui = Ui_LoginPage() 
@@ -54,7 +54,8 @@ class LoginPage(QWidget):
         # 회원가입 버튼이 호출할 화면 전환 함수
         self.show_signup = show_signup        
         # 로그인 성공 후 호출할 메인 화면 전환 함수
-        self.show_dashboard = show_dashboard  
+        self.show_dashboard = show_dashboard
+        self.show_admin = show_admin  
 
         # 로그인 결과와 사용자 정보를 저장할 상태값을 초기화
         # 서버가 반환한 임시 인증 토큰을 저장
@@ -101,9 +102,13 @@ class LoginPage(QWidget):
                 self.user_name = data.get("name", "")  
                 # 개인정보 화면에 표시할 이메일을 저장
                 self.user_email = email  
+                is_admin = bool(data.get("is_admin", False))  # 서버가 반환한 관리자 여부입니다.
                 print("로그인 성공: 메인 화면으로 이동합니다.")  
                 # JewelClient에 메인 화면 전환을 요청
-                self.show_dashboard(self.access_token)  
+                if is_admin and self.show_admin:
+                    self.show_admin(self.access_token)
+                else:
+                    self.show_dashboard(self.access_token)  
             else:
                 # 서버가 4xx/5xx를 반환하면 서버의 오류 메시지를 팝업으로 표시
                 detail = response.json().get("detail", "로그인에 실패했습니다.")
