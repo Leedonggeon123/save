@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LoginPage</class>
+ <widget class="QWidget" name="LoginPage">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>1280</width><height>800</height></rect></property>
+  <property name="windowTitle"><string>JEWEL Cloud - 로그인</string></property>
+  <property name="styleSheet"><string notr="true">QWidget#LoginPage{background:#ffffff;} QFrame#top_bar{background:#ffffff;} QLabel#title_label{color:#0b3d63;font-size:72px;font-weight:800;} QLineEdit{background:#eeeeee;color:#858585;border:0;border-radius:7px;padding:13px 20px;font-size:22px;min-height:38px;} QPushButton{border:0;} QPushButton#login_button{background:#2379aa;color:white;border-radius:7px;font-size:30px;min-height:92px;} QPushButton#find_id_button,QPushButton#signup_button{background:transparent;color:#858585;font-size:22px;min-width:120px;}</string></property>
+  <layout class="QVBoxLayout" name="outer_layout">
+   <property name="leftMargin"><number>0</number></property><property name="topMargin"><number>0</number></property><property name="rightMargin"><number>0</number></property><property name="bottomMargin"><number>0</number></property><property name="spacing"><number>0</number></property>
+   <item><widget class="QFrame" name="top_bar"><property name="minimumSize"><size><width>0</width><height>40</height></size></property><property name="maximumSize"><size><width>16777215</width><height>40</height></size></property><property name="frameShape"><enum>QFrame::NoFrame</enum></property></widget></item>
+   <item><layout class="QVBoxLayout" name="content_layout">
+    <property name="leftMargin"><number>322</number></property><property name="topMargin"><number>88</number></property><property name="rightMargin"><number>322</number></property><property name="bottomMargin"><number>100</number></property><property name="spacing"><number>0</number></property>
+    <item><widget class="QLabel" name="title_label"><property name="text"><string>JEWEL Cloud</string></property><property name="alignment"><set>Qt::AlignCenter</set></property></widget></item>
+    <item><spacer name="title_spacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeType"><enum>QSizePolicy::Fixed</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>64</height></size></property></spacer></item>
+    <item><widget class="QLineEdit" name="email_input"><property name="minimumSize"><size><width>0</width><height>64</height></size></property><property name="placeholderText"><string>아이디</string></property></widget></item>
+    <item><spacer name="email_spacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeType"><enum>QSizePolicy::Fixed</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>44</height></size></property></spacer></item>
+    <item><widget class="QLineEdit" name="password_input"><property name="minimumSize"><size><width>0</width><height>64</height></size></property><property name="placeholderText"><string>비밀번호</string></property><property name="echoMode"><enum>QLineEdit::Password</enum></property></widget></item>
+    <item><spacer name="password_spacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeType"><enum>QSizePolicy::Fixed</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>72</height></size></property></spacer></item>
+    <item><widget class="QPushButton" name="login_button"><property name="text"><string>로그인</string></property></widget></item>
+    <item><spacer name="button_spacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeType"><enum>QSizePolicy::Fixed</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>38</height></size></property></spacer></item>
+    <item><layout class="QHBoxLayout" name="bottom_layout"><item><widget class="QPushButton" name="find_id_button"><property name="text"><string>아이디찾기</string></property></widget></item><item><spacer name="link_spacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>300</width><height>20</height></size></property></spacer></item><item><widget class="QPushButton" name="signup_button"><property name="text"><string>회원가입</string></property></widget></item></layout></item>
+   </layout></item>
+  </layout>
+ </widget>
+ <resources/><connections/>
+</ui>
