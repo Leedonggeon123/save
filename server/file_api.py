@@ -38,6 +38,7 @@ from .file_service import (                                                     
     get_unique_path,
     list_files,
     delete_file as remove_file,
+     get_storage_usage,
 )
 
 
@@ -207,4 +208,25 @@ def update_file_limit(user_id: int, file_limit: int):
         "saved": True,
         "user_id": user_id,
         "file_limit": file_limit
+    }
+    
+    
+    
+@router.get("/usage/{user_id}")
+def get_file_usage(user_id: int):
+    """
+    사용자가 현재 사용 중인 전체 파일 용량을 반환합니다.
+    용량은 Byte와 MB 단위로 함께 반환합니다.
+    """
+
+    # 사용자 폴더 안의 전체 파일 용량을 Byte 단위로 계산합니다.
+    used_bytes = get_storage_usage(user_id)
+
+    # Byte를 MB로 변환합니다.
+    used_mb = used_bytes / (1024 * 1024)
+
+    return {
+        "user_id": user_id,
+        "used_bytes": used_bytes,
+        "used_mb": round(used_mb, 2),
     }
