@@ -12,3 +12,4 @@ app = FastAPI(                                          # fastapi 서버 객체 
 
 app.include_router(router)                                  # 파일 관련 api를 전체 서버에 등록
 
+app.include_router(auth_router)                                 # 로그인·회원가입·설정 인증 API를 서버에 등록
