@@ -3,7 +3,7 @@
 from __future__ import annotations
 import requests
 
-SERVER_URL = "http://127.0.0.1:8000"
+SERVER_URL = "http://10.10.10.107:8000"
 
 def request_verification_code(email: str) -> dict:
     response = requests.post(f"{SERVER_URL}/api/signup/request-code", json={"email": email}, timeout=15)

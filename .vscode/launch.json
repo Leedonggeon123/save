@@ -11,7 +11,10 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
-                "JEWEL_SERVER_URL": "http://127.0.0.1:8000"
+                // 서버 컴퓨터 접속
+                "JEWEL_SERVER_URL": "http://10.10.10.107:8000"
+                // 로컬 컴퓨터 접속
+                // "JEWEL_SERVER_URL": "http://127.0.0.1:8000"
             }
         }
     ]

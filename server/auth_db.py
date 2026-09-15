@@ -77,3 +77,22 @@ def verify_password(password: str, stored: str) -> bool:
         )  # 계산 결과와 저장된 해시를 안전하게 비교합니다.
     except (ValueError, TypeError):
         return False  # 해시 형식이 잘못되면 인증 실패입니다.
+
+
+def ensure_admin_column() -> None:
+    """기존 USER 테이블에 관리자 여부 컬럼이 없으면 추가합니다."""
+    with db() as cursor:
+        cursor.execute(
+            """SELECT COUNT(*) AS column_count
+               FROM INFORMATION_SCHEMA.COLUMNS
+               WHERE TABLE_SCHEMA=%s
+                 AND TABLE_NAME='USER'
+                 AND COLUMN_NAME='is_admin'""",
+            (os.getenv("DB_NAME", "jewel_cloud"),),
+        )
+        exists = cursor.fetchone()["column_count"]
+        if not exists:
+            table_name = chr(96) + "USER" + chr(96)
+            cursor.execute(
+                "ALTER TABLE " + table_name + " ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0"
+            )
