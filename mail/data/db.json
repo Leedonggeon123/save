@@ -1,0 +1,80 @@
+{
+  "users": [
+    {
+      "id": "usr_admin",
+      "email": "admin@jewel.cloud",
+      "name": "Jewel 관리자",
+      "role": "admin",
+      "grade": "관리자",
+      "passwordHash": "6fdf9caddf3482cb9beeb7c2cda24802cffdbdb5595971897bc32a92231bf5f76cc426c035dcb91ed039cbd54a8e4060feb9850907357365b8d26bc944c08505",
+      "salt": "b46a5a529d0b3326d1b4568981e58f49",
+      "blocked": false,
+      "settings": {
+        "autoFit": true,
+        "theme": "light"
+      },
+      "createdAt": "2026-09-12T09:00:49.557Z"
+    },
+    {
+      "id": "usr_demo",
+      "email": "user@jewel.cloud",
+      "name": "데모 사용자",
+      "role": "client",
+      "grade": "일반",
+      "passwordHash": "8183bfc81b68ac718a0a38bb0936dd343e4e15f80aa7841001849505aa2fecc003e0fc8c98cd3c9eca547f7d5bf2a2a8405b064447e32ae6d4bd2fff3c76ad1a",
+      "salt": "fa7a2d82b3de0f13dbc32ae4eb2b31ab",
+      "blocked": false,
+      "settings": {
+        "autoFit": true,
+        "theme": "light"
+      },
+      "createdAt": "2026-09-12T09:00:49.558Z"
+    },
+    {
+      "id": "usr_7c8d4bb18bee23",
+      "email": "sdafkjl@naver.com",
+      "name": "멍멍이",
+      "role": "client",
+      "grade": "일반",
+      "passwordHash": "4c5e919e8e5b54f9fcb961ef136027b50f4205a3d9ae973e77025d11ca735dc9064a33101eb44f4715335703ec2bc1af01bf5b2c5b122564304b5b9b28fb4e82",
+      "salt": "31d8c1d9370c5af7f9348f4d32fcc059",
+      "blocked": false,
+      "settings": {
+        "autoFit": true,
+        "theme": "light"
+      },
+      "createdAt": "2026-09-12T09:04:25.277Z"
+    }
+  ],
+  "files": [],
+  "mails": [
+    {
+      "id": "mail_welcome",
+      "from": "admin@jewel.cloud",
+      "to": [
+        "user@jewel.cloud"
+      ],
+      "subject": "Jewel Cloud에 오신 것을 환영합니다",
+      "body": "파일과 메일을 한 곳에서 관리해 보세요.",
+      "folder": "inbox",
+      "read": false,
+      "createdAt": "2026-09-12T09:00:49.558Z"
+    },
+    {
+      "id": "mail_54584feda9327c",
+      "from": "sdafkjl@naver.com",
+      "to": [
+        "ekcnxs@gmail.com"
+      ],
+      "subject": "text",
+      "body": "안녕!",
+      "folder": "sent",
+      "read": false,
+      "createdAt": "2026-09-12T09:07:59.114Z"
+    }
+  ],
+  "blocks": [],
+  "sessions": {
+    "fc32d1f905d9be2942be99cf725e218ecaa21b99d67195d4dd737fb4527cdc7f": "usr_7c8d4bb18bee23"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "jewel-cloud",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jewel Cloud - integrated file, mail and admin cloud prototype",
+  "scripts": { "start": "python -m uvicorn main:app --host 0.0.0.0 --port 3000", "start:node": "node server.js", "dev": "python -m uvicorn main:app --reload --port 3000" },
+  "engines": { "node": ">=18" }
+}
