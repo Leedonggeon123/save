@@ -69,8 +69,12 @@ def list_files(user_id: int, storage_root: str = "storage") -> list:            
             "file_size": file.stat().st_size,
             "file_path": str(file),
         }
-        for file in user_folder.iterdir()
-        if file.is_file()                                       # 폴더가 아니라 실제 파일만 목록에 포함 시키는 조건 이 함수는 나중에 api가 호출해서 사용자에게 파일 목록을 보여줄때 사용
+        for file in sorted(                                                 # 업로드 순서처럼 보이기 위해 수정 시간 기준
+            user_folder.iterdir(),                                          # 사용자 업로드한 파일 항목     
+            key=lambda file: file.stat().st_atime,                          # key는 (sorted의 제공 옵션)어떤 기준으로 정렬할지  파일의 수정 시간을 기준으로 정렬 (file.stat().st_atime는 업로드한 파일을 수정시간기준으로 정렬해라 뜻)
+            reverse=True                                                    # 역순으로 
+            )                                            
+        if file.is_file()                                                       # 폴더가 아니라 실제 파일만 목록에 포함 시키는 조건 이 함수는 나중에 api가 호출해서 사용자에게 파일 목록을 보여줄때 사용
     ]
 
 
