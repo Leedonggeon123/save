@@ -12,7 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-SERVER_URL = os.getenv("JEWEL_SERVER_URL", "http://127.0.0.1:8000").rstrip("/")
+SERVER_URL = os.getenv("JEWEL_SERVER_URL", "http://10.10.10.107:8000").rstrip("/")
 
 
 def logo_pixmap(path, width=72, height=72):
