@@ -1,29 +1,19 @@
-"""Settings screens: service plans, default email, and profile."""
+"""설정 화면"""
 from __future__ import annotations
 
 import requests
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QFormLayout,
-    QHBoxLayout,
-    QLabel,
-    QMessageBox,
-    QPushButton,
-    QLineEdit,
-    QStackedWidget,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import (QFormLayout,QHBoxLayout,QLabel,QMessageBox,QPushButton,QLineEdit,QStackedWidget,QVBoxLayout,QWidget,)
 
 from client.components.logout_button import LogoutButton
 from client.components.upgrade_button import UpgradeButton
 from client.ui_common import PROJECT_ROOT, SERVER_URL, logo_pixmap
 
-# 설정 메뉴에서 개인·메일·파일 설정으로 이동하는 화면입니다.
+# 설정 메뉴에서 개인·메일·파일 설정으로 이동하는 화면
 class SettingsPage(QWidget):
-    """설정 메뉴 목업 화면입니다."""
+    """설정 메뉴 화면"""
 
-    # go_back은 메인 화면, logout은 로그인 화면, show_personal은 개인설정으로 연결합니다.
+    # go_back은 메인 화면, logout은 로그인 화면, show_personal은 개인설정으로 연결
     def __init__(self, go_back, logout, show_personal):
         super().__init__()
         self.go_back = go_back
@@ -37,7 +27,7 @@ class SettingsPage(QWidget):
             "QPushButton#logout,QPushButton#back { background:#4295f4; }"
         )
 
-        # 상단 헤더, 중앙 설정 버튼, 하단 뒤로가기 버튼을 세로로 배치합니다.
+        # 상단 헤더, 중앙 설정 버튼, 하단 뒤로가기 버튼을 세로로 배치
         root = QVBoxLayout(self)
         root.setContentsMargins(24, 18, 24, 24)
         root.setSpacing(0)
@@ -77,25 +67,25 @@ class SettingsPage(QWidget):
         back_button.clicked.connect(self.go_back)
         root.addWidget(back_button, alignment=Qt.AlignLeft | Qt.AlignBottom)
 
-    # 개인설정 상세 페이지로 이동합니다.
+    # 개인설정 상세 페이지로 이동
     def open_account(self):
         print("개인설정 버튼 클릭", flush=True)
         self.show_personal()
 
-    # 메일 설정은 추후 메일 기능 화면으로 연결할 자리입니다.
+    # 메일 설정. 연결 안 됨
     def open_mail(self):
         print("메일설정 버튼 클릭", flush=True)
 
-    # 파일 설정은 추후 파일 기능 화면으로 연결할 자리입니다.
+    # 파일 설정. 연결 안 됨
     def open_file(self):
         print("파일설정 버튼 클릭", flush=True)
 
 
-# 왼쪽 카테고리와 오른쪽 상세 페이지를 함께 관리하는 개인설정 화면입니다.
+# 왼쪽 카테고리와 오른쪽 상세 페이지를 함께 관리하는 개인설정 화면
 class PersonalSettingsPage(QWidget):
-    """개인설정의 왼쪽 카테고리와 오른쪽 내용 영역입니다."""
+    """개인설정의 왼쪽 카테고리와 오른쪽 내용 영역"""
 
-    # go_back은 설정 메뉴, logout은 로그인 화면으로 돌아가는 콜백입니다.
+    # go_back은 설정 메뉴, logout은 로그인 화면으로 돌아가는 콜백
     def __init__(self, go_back, logout):
         super().__init__()
         self.go_back = go_back
@@ -130,7 +120,6 @@ class PersonalSettingsPage(QWidget):
         side.setSpacing(8)
         logo_box = QWidget()
         logo_box.setFixedHeight(80)
-        # 로고 영역은 사이드바의 연한 하늘색 배경을 그대로 사용합니다.
         logo_box.setStyleSheet("background:transparent;")
         logo_row = QHBoxLayout(logo_box)
         logo_row.setContentsMargins(6, 4, 6, 4)
@@ -157,7 +146,7 @@ class PersonalSettingsPage(QWidget):
             self.category_buttons.append(button)
             side.addWidget(button)
         side.addStretch()
-        # side는 레이아웃이므로, 실제 위젯인 sidebar를 바깥 레이아웃에 추가합니다.
+        # side는 레이아웃이므로, 실제 위젯인 sidebar를 바깥 레이아웃에 추가
         outer.addWidget(sidebar)
 
         content = QVBoxLayout()
@@ -170,7 +159,7 @@ class PersonalSettingsPage(QWidget):
         header.addWidget(logout_button)
         content.addLayout(header)
 
-        # 세 가지 개인설정 콘텐츠를 하나씩 보여주는 스택 위젯입니다.
+        # 세 가지 개인설정 콘텐츠를 하나씩 보여주는 스택 위젯
         self.pages = QStackedWidget()
         self.pages.addWidget(self.create_service_page())
         self.pages.addWidget(self.create_email_page())
@@ -180,13 +169,13 @@ class PersonalSettingsPage(QWidget):
 
         self.select_category(0)
 
-    # 왼쪽 메뉴 번호에 맞춰 오른쪽 콘텐츠 페이지를 선택합니다.
+    # 왼쪽 메뉴 번호에 맞춰 오른쪽 콘텐츠 페이지 선택
     def select_category(self, index):
         self.pages.setCurrentIndex(index)
         for i, button in enumerate(self.category_buttons):
             button.setChecked(i == index)
 
-    # 등급 카드와 업그레이드 버튼을 만드는 UI입니다.
+    # 등급 카드
     def create_service_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -232,7 +221,7 @@ class PersonalSettingsPage(QWidget):
             price_label.setStyleSheet(f"color:{text_color};")
             card.addWidget(price_label)
             card.addStretch()
-            # 모든 카드의 하단 동작 영역 높이를 같게 유지합니다.
+            # 모든 카드의 하단 동작 영역 높이를 같게 유지
             action_area = QWidget()
             action_area.setFixedHeight(46)
             action_layout = QHBoxLayout(action_area)
@@ -256,7 +245,7 @@ class PersonalSettingsPage(QWidget):
         layout.addStretch()
         return page
 
-    # 기본 발신 이메일 입력 UI를 만드는 함수입니다.
+    # 기본 발신 이메일 입력 UI를 만드는 함수
     def create_email_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -271,15 +260,15 @@ class PersonalSettingsPage(QWidget):
         self.sender_email_input = QLineEdit("jewel@gmail.com")
         self.sender_email_input.setFixedWidth(430)
         self.sender_email_input.setFixedHeight(48)
-        # 저장 버튼 없이 입력 완료(Enter 또는 포커스 이동)를 감지합니다.
+        # 저장 버튼 없이 입력 완료(Enter 또는 포커스 이동)를 감지
         self.sender_email_input.editingFinished.connect(self.save_default_email)
         row.addWidget(self.sender_email_input)
         layout.addWidget(row_box, alignment=Qt.AlignCenter)
         return page
 
-    # 입력 완료 시 USER_SETTINGS.default_sender_email을 서버에 저장합니다.
+    # 입력 완료 시 USER_SETTINGS.default_sender_email을 서버에 저장
     def save_default_email(self):
-        """USER_SETTINGS.default_sender_email을 자동으로 수정합니다."""
+        """USER_SETTINGS.default_sender_email을 자동으로 수정"""
         if not self.user_id:
             print("기본 이메일 저장 대기: 로그인 사용자 정보가 없습니다.", flush=True)
             return
@@ -297,9 +286,9 @@ class PersonalSettingsPage(QWidget):
         except requests.RequestException:
             QMessageBox.warning(self, "연결 오류", "서버에 연결할 수 없습니다.")
 
-    # 개인설정 진입 시 로그인한 사용자의 기본 이메일을 서버에서 불러옵니다.
+    # 개인설정 진입 시 로그인한 사용자의 기본 이메일을 서버에서 불러옴
     def load_default_email(self):
-        """개인설정 화면을 열 때 DB에 저장된 기본 이메일을 불러옵니다."""
+        """개인설정 화면을 열 때 DB에 저장된 기본 이메일을 불러옴"""
         if not self.user_id:
             return
         try:
@@ -312,7 +301,7 @@ class PersonalSettingsPage(QWidget):
         except requests.RequestException:
             print("기본 이메일을 불러오지 못했습니다.", flush=True)
 
-    # 이름·읽기 전용 이메일·비밀번호 수정 UI를 만드는 함수입니다.
+    # 이름·읽기 전용 이메일·비밀번호 수정 UI
     def create_personal_info_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -360,9 +349,9 @@ class PersonalSettingsPage(QWidget):
         layout.addWidget(button, alignment=Qt.AlignCenter)
         return page
 
-    # 이름만 또는 이름과 새 비밀번호를 검증한 뒤 서버에 저장합니다.
+    # 이름만 또는 이름과 새 비밀번호를 검증한 뒤 서버에 저장
     def update_profile(self):
-        """이름과 새 비밀번호를 검사한 뒤 서버에 저장합니다."""
+        """이름과 새 비밀번호를 검사한 뒤 서버에 저장"""
         name = self.name_input.text().strip()
         password = self.password_input.text()
         password_confirm = self.password_confirm_input.text()
@@ -399,7 +388,7 @@ class PersonalSettingsPage(QWidget):
         except requests.RequestException:
             QMessageBox.warning(self, "연결 오류", "서버에 연결할 수 없습니다.")
 
-    # 페이지를 다시 열 때 비밀번호 입력칸을 초기화합니다.
+    # 페이지를 다시 열 때 비밀번호 입력칸 초기화
     def reset_form(self):
         """개인정보 화면을 다시 열 때 비밀번호 입력값을 초기화합니다."""
         self.password_input.clear()
@@ -407,20 +396,20 @@ class PersonalSettingsPage(QWidget):
         self.password_input.setPlaceholderText("●●●●●●●●●●")
         self.password_confirm_input.setPlaceholderText("●●●●●●●●●●")
 
-    # 로그아웃 시 개인정보 화면의 사용자 입력을 모두 지웁니다.
+    # 로그아웃 시 개인정보 화면의 사용자 입력 모두 초기화
     def reset_all_form(self):
         """로그아웃 시 개인정보 입력 폼 전체를 비웁니다."""
         self.name_input.clear()
         self.email_input.clear()
         self.reset_form()
 
-    # 로그인 응답으로 받은 현재 사용자 정보를 화면에 표시합니다.
+    # 로그인 응답으로 받은 현재 사용자 정보를 화면에 표시
     def set_user_info(self, name, email):
         """로그인한 사용자 정보를 개인정보 화면에 표시합니다."""
         self.name_input.setText(name or "")
         self.email_input.setText(email or "")
 
-    # 실제 관리자 등급 변경 전까지 안내 팝업만 표시합니다.
+    # 실제 관리자 등급 변경 전까지 안내 팝업만 표시
     def show_upgrade_message(self):
         QMessageBox.information(self, "등급 업그레이드", "변경 불가\n관리자에게 문의하세요.")
 

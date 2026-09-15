@@ -1,6 +1,6 @@
 """Jewel Cloud 회원가입 화면.
 
-화면 배치는 signup.ui에서 만들고 signup_design.py는 Designer가 생성한 파일입니다.
+화면 배치는 signup.ui에서 만들고 signup_design.py는 Designer가 생성한 파일
 실행: python sign.py
 """
 from __future__ import annotations
@@ -13,14 +13,14 @@ from client import sign_server
 from source.designer_ui.signup_design import Ui_Form
 
 class SignupWindow(QWidget):
-    """회원가입 화면의 버튼 동작과 입력 검사를 담당합니다."""
+    """회원가입 화면의 버튼 동작과 입력 검사를 담당"""
     def __init__(self, go_login=None):
         super().__init__()
-        # main_gui.py에서 stacked widget 페이지 전환용으로 사용할 수 있습니다.
+        # main_gui.py에서 stacked widget 페이지 전환용으로 사용
         self.go_login = go_login
         self.ui = Ui_Form()
         self.ui.setupUi(self)
-        # 회원가입 제목도 로그인 화면과 같은 크고 굵은 글씨로 표시합니다.
+
         title_font = QFont("Ubuntu", 102)
         title_font.setWeight(QFont.Weight.Bold)
         title_font.setBold(True)
@@ -30,9 +30,9 @@ class SignupWindow(QWidget):
         )
         self.ui.title_label.setMinimumHeight(125)
         self.ui.title_label.setMaximumHeight(125)
-        # main_gui.py에서 사용할 때 로그인 화면으로 돌아가는 버튼입니다.
+        # 로그인 화면으로 돌아가는 버튼
         self.back_button = QPushButton("뒤로가기", self)
-        # 창 오른쪽 테두리에 붙지 않도록 안쪽으로 조금 이동합니다.
+        # 버튼 이동
         self.back_button.setGeometry(1125, 18, 120, 38)
         self.back_button.setStyleSheet(
             "QPushButton { background:#4285f4; color:white; border:0; "
@@ -40,19 +40,16 @@ class SignupWindow(QWidget):
         )
         self.back_button.clicked.connect(self.back_to_login)
         self.back_button.setVisible(go_login is not None)
-        # Designer 파일이 이전 버전으로 남아 있어도 실제 실행 화면의 간격을
-        # 항상 여기서 맞춥니다. (세로 입력창 사이 간격)
-        # 입력창 사이에는 적당한 간격을 두고, 화면 전체는 위에서 조금 띄웁니다.
+        # 세로 입력창 사이 간격
         self.ui.main_layout.setSpacing(14)
         self.ui.main_layout.setContentsMargins(320, 28, 320, 20)
-        # 남는 높이를 위젯 사이에 자동 분배하지 않고 아래쪽에 남깁니다.
+        # 남는 높이를 위젯 사이에 자동 분배하지 않고 아래쪽에 남김
         self.ui.main_layout.setAlignment(Qt.AlignTop)
-        # 제목 영역과 입력 영역을 시각적으로 분리합니다.
+        # 제목 영역과 입력 영역을 분리
         self.ui.main_layout.insertSpacing(1, 24)
         self.ui.email_layout.setSpacing(6)
         self.ui.code_layout.setSpacing(6)
-        # 입력 위젯이 남는 공간을 모두 차지해 행 사이가 벌어지지 않도록
-        # 높이를 고정합니다. 유효시간 문구는 더 작게 표시합니다.
+        # 입력 위젯이 남는 공간을 모두 차지해 행 사이가 벌어지지 않도록 높이를 고정
         for field in (
             self.ui.name_input,
             self.ui.email_input,
@@ -81,7 +78,7 @@ class SignupWindow(QWidget):
         self.ui.signup_button.clicked.connect(self.submit_signup)
 
     def reset_form(self) -> None:
-        """회원가입 화면을 다시 열 때 이전 입력값을 모두 지웁니다."""
+        """회원가입 화면을 다시 열 때 이전 입력값을 모두 초기화"""
         for field in (
             self.ui.name_input,
             self.ui.email_input,
@@ -97,16 +94,17 @@ class SignupWindow(QWidget):
         self.ui.timer_label.setText("인증번호를 발송하면 유효시간이 표시됩니다.")
 
     def back_to_login(self) -> None:
-        """뒤로가기 버튼을 눌렀을 때 로그인 화면으로 이동합니다."""
+        """뒤로가기 버튼을 눌렀을 때 로그인 화면으로 이동"""
         self.reset_form()
         if self.go_login:
             self.go_login()
 
     @staticmethod
     def show_error(parent: QWidget, title: str, error: Exception) -> None:
-        """기술적인 예외 대신 사용자가 읽을 수 있는 메시지를 보여줍니다."""
+        """사용자가 읽을 수 있는 메시지를 보여줌"""
         QMessageBox.warning(parent, title, getattr(error, "user_message", str(error)))
 
+    # 이메일(아이디) 롹인
     def check_email(self) -> None:
         email = self.ui.email_input.text().strip()
         if not email:
@@ -118,6 +116,7 @@ class SignupWindow(QWidget):
         except (RequestException, ValueError) as error:
             self.show_error(self, "중복 확인 실패", error)
 
+    # 인증번호 전송
     def send_code(self) -> None:
         email = self.ui.email_input.text().strip()
         if not email:
@@ -131,6 +130,7 @@ class SignupWindow(QWidget):
         except (RequestException, ValueError) as error:
             self.show_error(self, "전송 실패", error)
 
+    # 메일 인증
     def verify_code(self) -> None:
         if self.remaining_seconds <= 0:
             QMessageBox.warning(self, "인증 실패", "인증번호가 만료되었습니다. 새로 요청해주세요."); return
@@ -146,6 +146,7 @@ class SignupWindow(QWidget):
         except (RequestException, ValueError) as error:
             self.show_error(self, "인증 실패", error)
 
+    # 회원가입
     def submit_signup(self) -> None:
         if not self.email_is_available:
             QMessageBox.warning(self, "확인 필요", "먼저 아이디 중복 확인을 해주세요."); return

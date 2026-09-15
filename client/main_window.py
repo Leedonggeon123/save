@@ -6,15 +6,15 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from client.ui_common import PROJECT_ROOT, logo_pixmap
 
-# 로그인 성공 후 보이는 메인 메뉴 화면입니다.
+# 로그인 성공 후 보이는 메인 메뉴 화면
 class DashboardPage(QWidget):
-    """로그인 성공 후 표시할 Jewel Cloud 메인 화면입니다.
+    """로그인 성공 후 표시할 Jewel Cloud 메인 화면
 
-    현재는 UI만 먼저 만들고, 버튼 기능은 콘솔 출력으로 대체합니다.
-    다른 팀원이 실제 메일/파일/설정 화면을 만들면 각 메서드에 연결하면 됩니다.
+    현재는 UI만 먼저 만들고, 버튼 기능은 콘솔 출력으로 대체
+    메일/파일/설정 화면을 만들면 각 메서드에 연결
     """
 
-    # logout은 로그아웃 전환 함수, show_settings는 설정 화면 전환 함수입니다.
+    # logout은 로그아웃 전환 함수, show_settings는 설정 화면 전환 함수
     def __init__(self, logout, show_settings):
         super().__init__()
         self.logout = logout
@@ -27,12 +27,12 @@ class DashboardPage(QWidget):
             "QPushButton:hover { background:#1d6d9c; }"
         )
 
-        # 세로 레이아웃 안에 상단 로고와 중앙 메뉴 버튼을 배치합니다.
+        # 로고, 중앙메뉴 배치
         root = QVBoxLayout(self)
         root.setContentsMargins(24, 18, 24, 24)
         root.setSpacing(0)
 
-        # 헤더에는 로고와 서비스 이름을 배치합니다.
+        # 로고, 서비스 이름
         header = QHBoxLayout()
         icon = QLabel()
         icon_path = PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png"
@@ -45,7 +45,7 @@ class DashboardPage(QWidget):
         root.addLayout(header)
         root.addStretch(1)
 
-        # 메일·파일·설정 버튼을 가로 중앙에 배치합니다.
+        # 메일·파일·설정 버튼 가로 중앙에 배치
         menu = QHBoxLayout()
         menu.setContentsMargins(0, 0, 0, 0)
         menu.setSpacing(152)
@@ -62,21 +62,21 @@ class DashboardPage(QWidget):
         root.addLayout(menu)
         root.addStretch(1)
         # 설정 화면의 뒤로가기 버튼과 같은 높이를 예약해
-        # 두 화면의 중앙 버튼 위치가 정확히 같아지도록 합니다.
+        # 두 화면의 중앙 버튼 위치가 같아지도록
         bottom_space = QWidget()
         bottom_space.setFixedHeight(38)
         bottom_space.setStyleSheet("background: transparent;")
         root.addWidget(bottom_space)
 
-    # 현재 메일 화면은 목업 단계라 클릭 로그만 출력합니다.
+    # 현재 메일 화면에 연결된 것 없음. 클릭 로그만 출력
     def open_mail(self):
         print("메일 버튼 클릭", flush=True)
 
-    # 현재 파일 화면은 목업 단계라 클릭 로그만 출력합니다.
+    # 현재 파일 화면에 연결된 것 없음. 클릭 로그만 출력
     def open_file(self):
         print("파일 버튼 클릭", flush=True)
 
-    # 설정 버튼은 JewelClient의 설정 화면 전환 콜백을 호출합니다.
+    # 설정 버튼은 JewelClient의 설정 화면 전환 콜백을 호출
     def open_settings(self):
         print("설정 버튼 클릭", flush=True)
         self.show_settings()

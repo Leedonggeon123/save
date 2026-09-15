@@ -1,7 +1,7 @@
 """회원가입·이메일 인증·로그인을 처리하는 서버 코드.
 
-화면(sign.py)이 이 파일의 API 주소를 호출하고, 이 파일이 MariaDB와 Gmail SMTP를 사용합니다.
-비밀번호와 인증번호는 평문으로 DB에 저장하지 않습니다.
+화면(sign.py)이 이 파일의 API 주소를 호출하고, 이 파일이 MariaDB와 Gmail SMTP를 사용
+비밀번호와 인증번호는 평문으로 DB에 저장하지 않음
 """
 from __future__ import annotations
 import os, secrets, smtplib
@@ -12,49 +12,60 @@ from pydantic import BaseModel, EmailStr, Field
 import pymysql
 from .auth_db import db, ensure_auth_table, hash_password, verify_password
 
+# 모든 인증 URL 앞에 /api를 붙이는 라우터
 router = APIRouter(prefix="/api", tags=["auth"])
+# 인증번호는 발송 후 10분 동안만 유효
 CODE_TTL_MINUTES = 10
 
+# 이메일만 받는 API 요청 형식
 class EmailRequest(BaseModel):
     email: EmailStr
 
+# 최종 회원가입 요청 형식
 class SignupRequest(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=50)
     password: str = Field(min_length=10, max_length=128)
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
+# 로그인 요청 형식
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+# 기본 발신 이메일 수정 요청 형식
 class SenderEmailUpdate(BaseModel):
     user_id: int
     default_sender_email: EmailStr
 
+# 개인정보 수정 요청 형식 password는 선택값
 class ProfileUpdate(BaseModel):
     user_id: int
     name: str = Field(min_length=1, max_length=50)
     password: str | None = Field(default=None, min_length=10, max_length=128)
 
+# 인증번호 확인 요청 형식
 class CodeCheckRequest(BaseModel):
     email: EmailStr
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
+# 서버에서 Gmail 주소만 허용하도록 검증
 def validate_gmail(email: str) -> None:
     # Requirements specify Google mail; use this restriction until provider policy changes.
     if not email.lower().endswith(("@gmail.com", "@googlemail.com")):
         raise HTTPException(422, "Google Gmail 주소만 사용할 수 있습니다.")
 
+# 회원가입과 비밀번호 변경에 공통 적용하는 비밀번호 검증
 def validate_password(password: str) -> None:
-    """영문과 숫자를 포함한 ASCII 10자 이상 비밀번호인지 검사합니다."""
+    """영문과 숫자를 포함한 ASCII 10자 이상 비밀번호인지 검사"""
     if len(password) < 10 or not all("!" <= ch <= "~" for ch in password):
         raise HTTPException(422, "비밀번호는 영문·숫자·특수문자로 10자 이상 입력하세요.")
     if not any(ch.isascii() and ch.isalpha() for ch in password) or not any(ch.isdigit() for ch in password):
         raise HTTPException(422, "비밀번호에는 영문과 숫자를 각각 하나 이상 포함하세요.")
 
+# 서버가 Gmail SMTP로 인증번호 메일을 발송
 def send_gmail_code(email: str, code: str) -> None:
-    """서버의 Gmail 발송 계정으로 인증 메일을 보냅니다."""
+    """서버의 Gmail 발송 계정으로 인증 메일을 보냄"""
     host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
     port = int(os.environ.get("SMTP_PORT", "587"))
     username = os.environ.get("SMTP_USER")
@@ -74,11 +85,13 @@ def send_gmail_code(email: str, code: str) -> None:
     except (OSError, smtplib.SMTPException) as exc:
         raise HTTPException(502, "인증 메일 전송에 실패했습니다.") from exc
 
+# FastAPI 시작 시 인증번호 테이블을 준비
 @router.on_event("startup")
 def startup_auth() -> None:
     """서버 시작 시 인증번호 저장 테이블을 준비합니다."""
     ensure_auth_table()
 
+# 인증번호를 생성·저장하고 Gmail로 발송
 @router.post("/signup/request-code", status_code=202)
 def request_code(request: EmailRequest):
     """이메일별로 새 인증번호를 저장하고 Gmail로 발송합니다."""
@@ -101,6 +114,7 @@ def request_code(request: EmailRequest):
         raise
     return {"message": "인증 메일을 전송했습니다."}
 
+# 인증번호를 검증한 뒤 USER와 USER_SETTINGS에 저장
 @router.post("/signup", status_code=201)
 def signup(request: SignupRequest):
     """인증번호가 일치할 때만 USER 테이블에 회원을 추가합니다."""
@@ -123,11 +137,12 @@ def signup(request: SignupRequest):
         except pymysql.IntegrityError as exc:
             raise HTTPException(409, "이미 가입된 이메일입니다.") from exc
         user_id = c.lastrowid
-        # 가입 직후에는 로그인 이메일을 기본 발신 이메일로 저장합니다.
+        # 가입 직후에는 로그인 이메일을 기본 발신 이메일로 저장
         c.execute("INSERT INTO USER_SETTINGS(user_id,default_sender_email) VALUES(%s,%s)", (user_id, email))
         c.execute("DELETE FROM email_verification WHERE email=%s", (email,))
     return {"user_id": user_id, "message": "회원가입이 완료되었습니다."}
 
+# 회원가입 전 이메일 중복 여부를 확인
 @router.post("/signup/check-email")
 def check_email(request: EmailRequest):
     """회원가입 전에 USER.email 중복 여부를 확인합니다."""
@@ -137,6 +152,7 @@ def check_email(request: EmailRequest):
         if c.fetchone(): raise HTTPException(409, "이미 가입된 이메일입니다.")
     return {"available": True, "message": "사용 가능한 이메일입니다."}
 
+# 화면의 인증번호 확인 요청 처리
 @router.post("/signup/verify-code")
 def verify_code(request: CodeCheckRequest):
     """화면의 인증번호 확인 버튼이 호출하는 API입니다. 코드는 가입 완료 전까지 보존합니다."""
@@ -150,6 +166,7 @@ def verify_code(request: CodeCheckRequest):
             raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
     return {"verified": True, "message": "인증번호가 일치합니다."}
 
+# USER에서 계정을 조회하고 비밀번호 검증
 @router.post("/login")
 def login(request: LoginRequest):
     """이메일과 해시 비밀번호를 비교해 로그인합니다."""
@@ -162,6 +179,7 @@ def login(request: LoginRequest):
     token = secrets.token_urlsafe(32)
     return {"token": token, "access_token": token, "user_id": user["user_id"], "name": user["name"]}
 
+# 기본 이메일을 USER_SETTINGS에 저장하거나 수정
 @router.put("/settings/default-sender-email")
 def update_default_sender_email(request: SenderEmailUpdate):
     """기본 이메일 입력이 끝나는 즉시 USER_SETTINGS에 저장합니다."""
@@ -178,6 +196,7 @@ def update_default_sender_email(request: SenderEmailUpdate):
             c.execute("INSERT INTO USER_SETTINGS(user_id,default_sender_email) VALUES(%s,%s)", (request.user_id, email))
     return {"saved": True, "default_sender_email": email}
 
+# 사용자별 기본 이메일을 조회
 @router.get("/settings/default-sender-email/{user_id}")
 def get_default_sender_email(user_id: int):
     """개인설정 화면에 현재 기본 이메일을 보여줍니다."""
@@ -186,6 +205,7 @@ def get_default_sender_email(user_id: int):
         row = c.fetchone()
     return {"default_sender_email": row["default_sender_email"] if row else ""}
 
+# 이름 또는 비밀번호를 수정
 @router.put("/settings/profile")
 def update_profile(request: ProfileUpdate):
     """개인정보 화면에서 이름과 비밀번호를 수정합니다."""
