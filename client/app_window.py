@@ -41,7 +41,7 @@ class JewelClient(QStackedWidget):
         self.settings_page = SettingsPage(self.show_dashboard, self.show_login, self.show_personal, self.show_file_settings) 
         # 개인설정 상세 페이지
         self.personal_page = PersonalSettingsPage(self.show_settings, self.show_login, self.session)
-        self.admin_page = AdminPage(self.show_login)
+        self.admin_page = AdminPage(self.show_login, self.session)
 
         # 생성한 페이지를 QStackedWidget에 등록
         self.addWidget(self.login_page)      # index 0: 로그인
@@ -76,6 +76,8 @@ class JewelClient(QStackedWidget):
     def show_admin(self, access_token=None):
         """관리자 계정 로그인 성공 시 관리자 화면으로 이동합니다."""
         self.admin_page.access_token = access_token
+        # 관리자 로그인 완료 후 세션의 user_id로 회원 목록을 다시 조회
+        self.admin_page.load_members()
         self.setCurrentWidget(self.admin_page)
 
     def show_dashboard(self, access_token=None):

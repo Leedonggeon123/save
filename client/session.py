@@ -3,7 +3,7 @@ from typing import Any
 
 @dataclass
 class UserSession:
-    """로그인 상태를 화면 사이에서 공유합니다. 비밀번호는 저장하지 않습니다."""
+    """로그인 상태를 화면 사이에서 공유. 비밀번호는 저장X"""
     user_id: int | None = None
     email: str = ""
     name: str = ""
