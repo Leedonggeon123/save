@@ -34,15 +34,9 @@ class LoginPage(QWidget):
                 "QLineEdit::placeholder { color:#858585; }"
             )
 
-        # Designer에서 제목 objectName이 달라져도 제목 텍스트로 찾을 수 있게 처리
+        # 타이틀 텍스트
         title = self.findChild(QLabel, "title_label")
-        # objectName으로 찾지 못한 경우 텍스트를 기준으로 다시 찾음
-        if title is None: 
-            title = next(
-                (label for label in self.findChildren(QLabel)
-                 if label.text().strip() == "JEWEL Cloud"),
-                None)
-
+        
         if title is not None:
             # 제목이 테마에 의해 작아지지 않도록 글꼴 객체와 스타일시트를 함께 지정
             title_font = QFont("Ubuntu", 102)  
@@ -76,11 +70,12 @@ class LoginPage(QWidget):
             # 필수값이 비어 있으면 서버 요청 없이 사용자에게 안내
             QMessageBox.warning(self, "입력 오류", "이메일과 비밀번호를 입력해주세요.")
             return
-
+        
+        # try-except 실행 중 예외가 발생할 수 있는 코드를 안전하게 처리하기 위해
         try:
             # 클라이언트에서 FastAPI 서버의 로그인 endpoint로 POST 요청을 보냄
             # 서버 주소와 로그인 API 경로를 결합 / 서버에 입력값 JSON으로 전달 / timeout: 서버가 응답하지 않을 때 무한 대기하지 않도록 제한
-            response = requests.post( f"{SERVER_URL}/api/login", json={"email": email, "password": password}, timeout=30)                     
+            response = requests.post( f"{SERVER_URL}/api/login", json={"email": email, "password": password}, timeout=15)                     
 
             if response.ok:
                 # HTTP 응답이면 서버 JSON에서 로그인 정보를 꺼냄
@@ -88,7 +83,8 @@ class LoginPage(QWidget):
                 data = response.json()  
                 # 인증 토큰을 저장
                 self.session.update_from_login(data, email) 
-                is_admin = self.session.is_admin  # 서버가 반환한 관리자 여부입니다.
+                # 서버가 반환한 관리자 여부
+                is_admin = self.session.is_admin 
                 print("로그인 성공: 메인 화면으로 이동합니다.")  
                 # JewelClient에 메인 화면 전환을 요청
                 if is_admin and self.show_admin:
@@ -99,13 +95,9 @@ class LoginPage(QWidget):
                 # 서버가 4xx/5xx를 반환하면 서버의 오류 메시지를 팝업으로 표시
                 detail = response.json().get("detail", "로그인에 실패했습니다.")
                 QMessageBox.warning(self, "로그인 실패", str(detail))
-        
+        # 서버에 연결하지 못한 경우
         except requests.RequestException as error:
-            QMessageBox.critical(
-                self,
-                "연결 오류",
-                f"서버와 통신할 수 없습니다.\n{error}"
-            )
+            QMessageBox.critical(self,"연결 오류",f"서버와 통신할 수 없습니다.\n{error}")
 
 # 다른 모듈에서 공개할 화면을 명시
 __all__ = ["LoginPage"]  
