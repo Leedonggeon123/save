@@ -27,7 +27,7 @@
      <number>30</number>
     </property>
     <item>
-     <widget class="QPushButton" name="pushButton">
+     <widget class="QPushButton" name="cloud_storage_btn">
       <property name="enabled">
        <bool>true</bool>
       </property>
@@ -75,7 +75,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="pushButton_4">
+     <widget class="QPushButton" name="folder_manage_btn">
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -93,12 +93,15 @@
    <property name="geometry">
     <rect>
      <x>120</x>
-     <y>69</y>
+     <y>70</y>
      <width>121</width>
      <height>411</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
+    <property name="spacing">
+     <number>20</number>
+    </property>
     <item>
      <widget class="QLabel" name="label">
       <property name="maximumSize">
@@ -119,62 +122,56 @@
      </widget>
     </item>
     <item>
+     <widget class="QLabel" name="label_5">
+      <property name="maximumSize">
+       <size>
+        <width>60</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../../../../../mnt/c/Users/AIOT/Pictures/file(img).png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_6">
+      <property name="maximumSize">
+       <size>
+        <width>60</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../../../../../mnt/c/Users/AIOT/Pictures/file(img).png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="label_2">
       <property name="maximumSize">
        <size>
-        <width>70</width>
-        <height>70</height>
+        <width>60</width>
+        <height>60</height>
        </size>
       </property>
       <property name="text">
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap>../../../../../../mnt/c/Users/AIOT/Pictures/Screenshots/스크린샷 2026-09-14 165556.png</pixmap>
-      </property>
-      <property name="scaledContents">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_3">
-      <property name="minimumSize">
-       <size>
-        <width>70</width>
-        <height>70</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>70</width>
-        <height>70</height>
-       </size>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="pixmap">
-       <pixmap>../../../../../../mnt/c/Users/AIOT/Pictures/Screenshots/스크린샷 2026-09-14 165612.png</pixmap>
-      </property>
-      <property name="scaledContents">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_4">
-      <property name="maximumSize">
-       <size>
-        <width>70</width>
-        <height>70</height>
-       </size>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="pixmap">
-       <pixmap>../../../../../../mnt/c/Users/AIOT/Pictures/Screenshots/스크린샷 2026-09-14 165616.png</pixmap>
+       <pixmap>../../../../../mnt/c/Users/AIOT/Pictures/folder(img).png</pixmap>
       </property>
       <property name="scaledContents">
        <bool>true</bool>
@@ -185,10 +182,10 @@
   </widget>
  </widget>
  <tabstops>
-  <tabstop>pushButton</tabstop>
+  <tabstop>cloud_storage_btn</tabstop>
   <tabstop>file_size_limit_btn</tabstop>
   <tabstop>receive_path_btn</tabstop>
-  <tabstop>pushButton_4</tabstop>
+  <tabstop>folder_manage_btn</tabstop>
  </tabstops>
  <resources/>
  <connections/>

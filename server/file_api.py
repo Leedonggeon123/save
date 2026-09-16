@@ -38,7 +38,9 @@ from .file_service import (                                                     
     get_unique_path,
     list_files,
     delete_file as remove_file,
-     get_storage_usage,
+    get_storage_usage,
+    create_folder,                                                                          # api에서 사용할 수 있게 가져옴 
+    delete_folder,
 )
 
 
@@ -219,14 +221,109 @@ def get_file_usage(user_id: int):
     용량은 Byte와 MB 단위로 함께 반환합니다.
     """
 
-    # 사용자 폴더 안의 전체 파일 용량을 Byte 단위로 계산합니다.
+
+   # 사용자 등급을 DB에서 조회
+    with db() as cursor:
+        cursor.execute(
+            """
+            SELECT grade
+            FROM `USER`
+            WHERE user_id = %s
+            """,
+            (user_id,)
+        )
+
+        user = cursor.fetchone()
+
+    
+    
+     # 사용자 등급에 따른 전체 클라우드 용량
+    grade_limits = {
+        "일반": 100,
+        "비지니스": 200,
+        "VIP": 500,
+        "VVIP": 1024
+    }
+
+    grade = user["grade"]
+    total_mb = grade_limits.get(grade, 100)
+
+    # 현재 사용량 계산
     used_bytes = get_storage_usage(user_id)
 
-    # Byte를 MB로 변환합니다.
+    # 사용 중인 용량을 MB로 변환
     used_mb = used_bytes / (1024 * 1024)
+
+    # 사용 가능 용량 계산
+    available_mb = total_mb - used_mb
+
+    # 사용 가능 용량이 음수가 되지 않도록 처리
+    if available_mb < 0:
+        available_mb = 0
 
     return {
         "user_id": user_id,
         "used_bytes": used_bytes,
         "used_mb": round(used_mb, 2),
+        "available_mb": round(available_mb, 2)          # 클라이언트한테 사용가능 용량 보냄
+    }
+    
+    
+    
+    
+    
+    
+    
+@router.post("/folder")                                                                 # 폴더 생성 api
+def create_user_folder(user_id: int, folder_name: str):
+    # 폴더 이름이 비어있는지 확인
+    if not folder_name.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="폴더 이름을 입력해주세요."
+        )
+
+    try:
+        # 실제 폴더 생성
+        folder_path = create_folder(user_id, folder_name)
+
+    except FileExistsError:
+        # 같은 이름의 폴더가 이미 있는 경우
+        raise HTTPException(
+            status_code=400,
+            detail="이미 존재하는 폴더입니다."
+        )
+
+    return {
+        "message": "폴더 생성 완료",
+        "folder_path": folder_path
+    }
+    
+    
+    
+    
+    
+@router.delete("/folder")                                                       # 삭제 api
+def delete_user_folder(user_id: int, folder_name: str):
+    try:
+        # 실제 폴더 삭제
+        delete_folder(user_id, folder_name)
+
+    except FileNotFoundError:
+        # 폴더가 없는 경우
+        raise HTTPException(
+            status_code=404,
+            detail="삭제할 폴더가 존재하지 않습니다."
+        )
+
+    except OSError:
+        # 폴더 안에 파일이나 다른 폴더가 있는 경우
+        raise HTTPException(
+            status_code=400,
+            detail="폴더가 비어있지 않습니다."
+        )
+
+    return {
+        "message": "폴더 삭제 완료",
+        "folder_name": folder_name
     }

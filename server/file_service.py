@@ -149,3 +149,44 @@ def get_storage_usage(user_id: int, storage_root: str = "storage") -> int:
 
     # 계산된 전체 용량을 Byte 단위로 반환합니다.
     return total_size
+
+
+
+
+def create_folder(user_id: int, folder_name: str, storage_root: str = "storage") -> str:        # 폴더 관리 로직
+    # 사용자별 저장 폴더 경로를 만듭니다.
+    # 예: storage/1
+    user_folder = Path(storage_root) / str(user_id)
+
+    # 사용자의 폴더가 없으면 만듭니다.
+    user_folder.mkdir(parents=True, exist_ok=True)
+
+    # 새로 만들 폴더의 경로를 만듭니다.
+    folder_path = user_folder / folder_name
+
+    # 폴더를 만듭니다.
+    folder_path.mkdir()
+
+    # 만들어진 폴더 경로를 반환합니다.
+    return str(folder_path)
+
+
+
+def delete_folder(user_id: int, folder_name: str, storage_root: str = "storage") -> None:
+    # 사용자별 저장 폴더 경로를 만듭니다.
+    # 예: storage/1
+    user_folder = Path(storage_root) / str(user_id)
+
+    # 삭제할 폴더의 경로를 만듭니다.
+    folder_path = user_folder / folder_name
+
+    # 폴더가 존재하지 않으면 오류를 발생시킵니다.
+    if not folder_path.exists():
+        raise FileNotFoundError("삭제할 폴더가 존재하지 않습니다.")
+
+    # 폴더 안에 파일이나 다른 폴더가 있으면 삭제하지 않습니다.
+    if any(folder_path.iterdir()):                                                      # any(여러 조건 중 하나라도 참인지 확인하는 함수 .iterdir()이 폴더안에 파일이 있는지 검사)
+        raise OSError("폴더가 비어있지 않습니다.")                                         # 파일이 있으면 경고 
+
+    # 비어있는 폴더만 삭제합니다.
+    folder_path.rmdir()
