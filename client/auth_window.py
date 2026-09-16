@@ -80,7 +80,7 @@ class LoginPage(QWidget):
         try:
             # 클라이언트에서 FastAPI 서버의 로그인 endpoint로 POST 요청을 보냄
             # 서버 주소와 로그인 API 경로를 결합 / 서버에 입력값 JSON으로 전달 / timeout: 서버가 응답하지 않을 때 무한 대기하지 않도록 제한
-            response = requests.post( f"{SERVER_URL}/api/login", json={"email": email, "password": password}, timeout=15)                     
+            response = requests.post( f"{SERVER_URL}/api/login", json={"email": email, "password": password}, timeout=30)                     
 
             if response.ok:
                 # HTTP 응답이면 서버 JSON에서 로그인 정보를 꺼냄
@@ -99,8 +99,13 @@ class LoginPage(QWidget):
                 # 서버가 4xx/5xx를 반환하면 서버의 오류 메시지를 팝업으로 표시
                 detail = response.json().get("detail", "로그인에 실패했습니다.")
                 QMessageBox.warning(self, "로그인 실패", str(detail))
-        except requests.RequestException:
-            QMessageBox.critical(self, "연결 오류", "서버에 연결할 수 없습니다.")
+        
+        except requests.RequestException as error:
+            QMessageBox.critical(
+                self,
+                "연결 오류",
+                f"서버와 통신할 수 없습니다.\n{error}"
+            )
 
 # 다른 모듈에서 공개할 화면을 명시
 __all__ = ["LoginPage"]  

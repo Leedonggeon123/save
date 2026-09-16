@@ -4,6 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+                                         
 from client.ui_common import PROJECT_ROOT, logo_pixmap
 
 # 로그인 성공 후 보이는 메인 메뉴 화면
@@ -15,10 +16,12 @@ class DashboardPage(QWidget):
     """
 
     # logout은 로그아웃 전환 함수, show_settings는 설정 화면 전환 함수
-    def __init__(self, logout, show_settings):
+    def __init__(self, logout, show_settings, show_file):
         super().__init__()
+        
         self.logout = logout
         self.show_settings = show_settings
+        self.show_file = show_file                                                                              # 파일 버튼 클릭했을떄 실행할 함수를 저장
         self.setStyleSheet(
             "QWidget { background: white; }"
             "QLabel#brand { color:#0b3d63; font-size:28px; font-weight:800; }"
@@ -74,11 +77,10 @@ class DashboardPage(QWidget):
 
     # 현재 파일 화면에 연결된 것 없음. 클릭 로그만 출력
     def open_file(self):
-        print("파일 버튼 클릭", flush=True)
+        self.show_file()
 
     # 설정 버튼은 JewelClient의 설정 화면 전환 콜백을 호출
     def open_settings(self):
-        print("설정 버튼 클릭", flush=True)
         self.show_settings()
 
 

@@ -1,10 +1,10 @@
 import sys
-
+import requests  # FastAPI 서버에 요청을 보내기 위해 사용
+from client.ui_common import SERVER_URL  # 서버 주소를 공통으로 사용
 from PySide6.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox
 from PySide6.QtUiTools import QUiLoader
 from pathlib import Path
 
-user_id = 1
 
 
 class File_Setting_Page:
@@ -12,6 +12,7 @@ class File_Setting_Page:
         self.ui = ui
         self.user_id = user_id
         self.file_page = file_page                                                  # main에서 전달받은 file_page 객체를 저장 (다운로드 경로받기 위해 사용)
+        self.file_size_limit = 0
         self.receive_path = Path("/mnt/c/Users/AIOT/Desktop")                       # 선택 안했을때 기본경로
         
         self.ui.receive_path_btn.clicked.connect(self.set_receive_path)                 # 받는 위치 설정 버튼
@@ -29,7 +30,8 @@ class File_Setting_Page:
 
 
     
-    def set_file_size_limit(self):                                                          # 파일 크기 제한 함수
+    def set_file_size_limit(self):
+        # 사용자에게 제한 크기를 MB 단위로 입력받음
         size, ok = QInputDialog.getInt(
             self.ui,
             "파일 크기 제한",
@@ -38,33 +40,118 @@ class File_Setting_Page:
             0
         )
 
-        if ok:                                                                                               
-            if size == 0:                                                                            # 0이면 등급 기본 제한으로 되돌림
-                self.file_page.max_file_size = (self.file_page.grade_default_limit)
-                self.file_size_limit = 0
-                print("파일 크기 제한: 등급 기본값 사용")
-                return
-                                                                                           
-            requested_limit = size * 1024 * 1024                                                    # 사용자가 입력한 MB를 Byte로 변환
-                 
-                                                                                        
-            if requested_limit > self.file_page.grade_default_limit:                                    # 등급 기본 제한보다 크게 설정하는지 확인
-                max_mb = (self.file_page.grade_default_limit / (1024 * 1024))
+        # 사용자가 취소한 경우 함수 종료
+        if not ok:
+            return
 
+        # 0은 개인 제한을 해제하고 등급 기본 제한을 사용한다는 뜻
+        if size == 0:
+            requested_limit = 0
+            
+            try:
+                # 0을 FastAPI로 보내 DB에 저장
+                response = requests.put(
+                    f"{SERVER_URL}/files/settings/file-limit",
+                    params={
+                        "user_id": self.user_id,
+                        "file_limit": requested_limit
+                    },
+                    timeout=15
+                )
+                            
+
+                
+            except requests.RequestException as error:
                 QMessageBox.warning(
                     self.ui,
-                    "설정할 수 없음",
-                    f"현재 등급에서는 최대 {max_mb:.0f}MB까지 설정할 수 있습니다."
+                    "연결 오류",
+                    f"서버에 연결할 수 없습니다.\n{error}"
                 )
                 return
-                      
-                                                                                  
-            self.file_page.max_file_size = requested_limit                                                       # 등급 제한 이하인 경우에만 적용
-            self.file_size_limit = size
-            print("파일 크기 제한:", size, "MB")
+
+            # DB 저장 실패 처리
+            if response.status_code != 200:
+                QMessageBox.warning(
+                    self.ui,
+                    "저장 실패",
+                    response.text
+                )
+                return
+
+            # DB 저장 성공 후 현재 프로그램에 등급 기본 제한 적용
+            self.file_page.max_file_size = (
+                self.file_page.grade_default_limit
+            )
+
+            self.file_size_limit = 0
+
+            print("파일 크기 제한: 등급 기본값 사용")
+            return
+
+        # 사용자가 입력한 MB를 Byte로 변환
+        requested_limit = size * 1024 * 1024
+
+        # 등급 기본 제한보다 큰 값은 설정할 수 없음
+        if requested_limit > self.file_page.grade_default_limit:
+            max_mb = (
+                self.file_page.grade_default_limit
+                / (1024 * 1024)
+            )
+
+            QMessageBox.warning(
+                self.ui,
+                "설정할 수 없음",
+                f"현재 등급에서는 최대 {max_mb:.0f}MB까지 설정할 수 있습니다."
+            )
+            return
+
+        try:
+            # 입력한 제한값을 FastAPI로 보내 DB에 저장
+            response = requests.put(
+                f"{SERVER_URL}/files/settings/file-limit",
+                params={
+                    "user_id": self.user_id,
+                    "file_limit": requested_limit
+                },
+                timeout=15
+            )
+
+        except requests.RequestException as error:
+            QMessageBox.warning(
+                self.ui,
+                "연결 오류",
+                f"서버에 연결할 수 없습니다.\n{error}"
+            )
+            return
+
+        # DB 저장 실패 처리
+        if response.status_code != 200:
+            QMessageBox.warning(
+                self.ui,
+                "저장 실패",
+                response.text
+            )
+            return
+
+        # DB 저장에 성공한 경우 현재 프로그램에도 제한값 적용
+        self.file_page.max_file_size = requested_limit
+        self.file_size_limit = size
+
+        print("파일 크기 제한 DB 저장 완료:", size, "MB")
+                
             
             
-            
+
+
+
+
+
+
+
+
+
+
+
 # app = QApplication(sys.argv)                  # 호출을 메인py에서 
 
 # loader = QUiLoader()

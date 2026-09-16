@@ -12,6 +12,12 @@ from client.admin_window import AdminPage  # 설정 페이지들
 from client.session import UserSession
 
 
+from PySide6.QtUiTools import QUiLoader
+from client.file_client import FilePage                                                     # 파일 파트 추가
+from client.file_settings import File_Setting_Page         
+from client.ui_common import PROJECT_ROOT
+
+
 class JewelClient(QStackedWidget):
     """로그인·회원가입·메인·설정 페이지를 하나의 창에서 전환"""
 
@@ -30,9 +36,9 @@ class JewelClient(QStackedWidget):
         # 회원가입 완료 후 로그인화면 돌아오도록
         self.signup_page = SignupWindow(go_login=self.show_login)  
         # 로그인 후 메인 페이지
-        self.dashboard_page = DashboardPage(self.show_login, self.show_settings)  
+        self.dashboard_page = DashboardPage(self.show_login, self.show_settings, self.show_file)  
         # 설정 메뉴 페이지
-        self.settings_page = SettingsPage(self.show_dashboard, self.show_login, self.show_personal) 
+        self.settings_page = SettingsPage(self.show_dashboard, self.show_login, self.show_personal, self.show_file_settings) 
         # 개인설정 상세 페이지
         self.personal_page = PersonalSettingsPage(self.show_settings, self.show_login, self.session)
         self.admin_page = AdminPage(self.show_login, self.session)
@@ -100,6 +106,84 @@ class JewelClient(QStackedWidget):
         # 개인설정 페이지 전환
         self.setCurrentWidget(self.personal_page) 
 
+   
+   
+   
+    def show_file(self):                            # 파일 클릭시
+        loader = QUiLoader()
+
+        # FilePage가 아직 없을 때만 새로 생성
+        if not hasattr(self, "file_page"):
+            file_ui_path = (
+                PROJECT_ROOT
+                / "source"
+                / "designer_ui"
+                / "file_menu.ui"
+            )
+
+            self.file_ui = loader.load(str(file_ui_path))
+
+            self.file_page = FilePage(
+                self.file_ui,
+                self.session.user_id,
+                self.session.grade,
+                self.session.file_limit
+            )
+
+        # 기존 FilePage를 다시 사용
+        self.file_page.load_file_list()
+        self.file_page.load_storage_usage()             # 클라우드 용량 확인
+        self.file_page.ui.show()
+
+    
+    def show_file_settings(self):               # 파일 설정 클릭시 
+        loader = QUiLoader()
+
+        # 파일 설정 UI만 불러오기
+        settings_ui_path = (
+            PROJECT_ROOT
+            / "source"
+            / "designer_ui"
+            / "file_settings.ui"
+        )
+
+        self.file_settings_ui = loader.load(
+            str(settings_ui_path)
+        )
+
+        # 파일 화면이 아직 만들어지지 않았다면
+        # 설정 기능이 사용할 FilePage를 먼저 생성
+        if not hasattr(self, "file_page"):
+            file_ui_path = (
+                PROJECT_ROOT
+                / "source"
+                / "designer_ui"
+                / "file_menu.ui"
+            )
+
+            self.file_ui = loader.load(str(file_ui_path))
+
+            user_id = self.session.user_id           # 로그인한 아이디
+            grade = self.session.grade
+            file_limit = self.session.file_limit
+
+            self.file_page = FilePage(
+                self.file_ui,
+                user_id,
+                grade,
+                file_limit
+            )
+
+        # 파일 설정 기능 연결
+        self.file_setting_page = File_Setting_Page(
+            self.file_settings_ui,
+            self.file_page.user_id,
+            self.file_page
+        )
+
+        # 파일 설정 화면만 표시
+        self.file_settings_ui.show()
+    
 
 # 이 파일을 직접 실행했을 때도 동일한 JewelClient를 실행
 if __name__ == "__main__":

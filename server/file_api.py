@@ -25,18 +25,20 @@
 
 
 
-
+from .auth_db import db                                                                 # db연결
 from pathlib import Path                                                            # 파일 경로를 다루는 도구 
 import shutil                                                                        # 파일을 복사하는 도구 
+from pydantic import BaseModel
 
 from fastapi import APIRouter, File, HTTPException, UploadFile                       # FastAPI에서 필요한 기능을 가져오기
 
 from fastapi.responses import FileResponse
 
-from .file_service import (                                                     # .으로 상대 경로 사용 
+from .file_service import (                                                         # .으로 상대 경로 사용 
     get_unique_path,
     list_files,
     delete_file as remove_file,
+     get_storage_usage,
 )
 
 
@@ -45,6 +47,33 @@ router = APIRouter(                                                             
     tags=["files"],
 )
 
+
+
+@router.get("/settings/{user_id}")                                              # 
+def get_file_settings(user_id: int):
+    # user_id로 DB에서 등급과 파일 제한값 조회
+    with db() as cursor:
+        cursor.execute(
+            """
+            SELECT grade, file_limit
+            FROM `USER`
+            WHERE user_id = %s
+            """,
+            (user_id,)
+        )
+
+        user = cursor.fetchone()
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="사용자를 찾을 수 없습니다."
+        )
+
+    return {
+        "grade": user["grade"],
+        "file_limit": user["file_limit"]
+    }
 
 @router.post("/upload")                                                             # POST/files/upload 주소를 만듬 
 async def upload_file(                                                              # 서버가 받을 값을 정하는 부분                                                                     
@@ -127,4 +156,77 @@ def delete_server_file(file_path: str):
     return {
         "message": "파일 삭제 완료",
         "file_path": file_path,
+    }
+    
+    
+
+@router.put("/settings/file-limit")
+def update_file_limit(user_id: int, file_limit: int):
+    """
+    파일 설정에서 입력한 제한값을 USER.file_limit에 저장합니다.
+    file_limit은 Byte 단위입니다.
+    0이면 등급 기본 제한을 사용합니다.
+    """
+
+    # 음수 제한값 방지
+    if file_limit < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="파일 제한값은 0 이상이어야 합니다."
+        )
+
+    with db() as cursor:
+        # 사용자 존재 여부 확인
+        cursor.execute(
+            """
+            SELECT user_id
+            FROM `USER`
+            WHERE user_id = %s
+            """,
+            (user_id,)
+        )
+
+        user = cursor.fetchone()
+
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="사용자를 찾을 수 없습니다."
+            )
+
+        # USER 테이블의 파일 제한값 수정
+        cursor.execute(
+            """
+            UPDATE `USER`
+            SET file_limit = %s
+            WHERE user_id = %s
+            """,
+            (file_limit, user_id)
+        )
+
+    return {
+        "saved": True,
+        "user_id": user_id,
+        "file_limit": file_limit
+    }
+    
+    
+    
+@router.get("/usage/{user_id}")
+def get_file_usage(user_id: int):
+    """
+    사용자가 현재 사용 중인 전체 파일 용량을 반환합니다.
+    용량은 Byte와 MB 단위로 함께 반환합니다.
+    """
+
+    # 사용자 폴더 안의 전체 파일 용량을 Byte 단위로 계산합니다.
+    used_bytes = get_storage_usage(user_id)
+
+    # Byte를 MB로 변환합니다.
+    used_mb = used_bytes / (1024 * 1024)
+
+    return {
+        "user_id": user_id,
+        "used_bytes": used_bytes,
+        "used_mb": round(used_mb, 2),
     }
