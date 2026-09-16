@@ -413,5 +413,5 @@ class PersonalSettingsPage(QWidget):
     def show_upgrade_message(self):
         QMessageBox.information(self, "등급 업그레이드", "변경 불가\n관리자에게 문의하세요.")
 
-
+# 아래 두 클래스만 넘김 / 코드 충돌 방지
 __all__ = ["SettingsPage", "PersonalSettingsPage"]

@@ -103,4 +103,4 @@ class LoginPage(QWidget):
             QMessageBox.critical(self, "연결 오류", "서버에 연결할 수 없습니다.")
 
 # 다른 모듈에서 공개할 화면을 명시
-__all__ = ["LoginPage", "SignupWindow"]  
+__all__ = ["LoginPage"]  
