@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>UnblockCompleteDialog</class>
+ <widget class="QDialog" name="UnblockCompleteDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>400</width>
+    <height>300</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>400</width>
+    <height>300</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Jewel</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QDialog { background: #6d7582; } QFrame#titleBar { background: #a8cadf; }</string>
+  </property>
+  <widget class="QFrame" name="titleBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>400</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <widget class="QPushButton" name="minimizeButton">
+    <property name="geometry">
+     <rect>
+      <x>326</x>
+      <y>0</y>
+      <width>32</width>
+      <height>40</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>−</string>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border: none; font: 18px Arial;</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="closeButton">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>0</y>
+      <width>32</width>
+      <height>40</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>×</string>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border: none; font: 24px Arial;</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="completeLabel">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>137</y>
+     <width>260</width>
+     <height>55</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>차단이 해제 되었습니다.</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font: 700 20px &quot;Malgun Gothic&quot;; color: #000;</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
