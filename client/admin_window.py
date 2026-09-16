@@ -12,6 +12,7 @@ from source.designer_ui.admin_design import Ui_AdminPage, apply_admin_table_styl
 from client.components.logout_button import LogoutButton
 from client.session import UserSession
 from client.ui_common import SERVER_URL
+from client.admin_client import AdminNoticeContentWidget  # 공지 위젯 임포트
 
 
 class AdminPage(QWidget):
@@ -43,6 +44,7 @@ class AdminPage(QWidget):
         self.action_button = self.ui.action_button
         self.grade_table = self.ui.grade_table
         self.grade_save_button = self.ui.grade_save_button
+        self.content_layout = self.ui.content_layout  # 레이아웃 참조 확보
 
         self.ui.logout_button.clicked.connect(self.logout)
         for button in self.menu_buttons:
@@ -57,10 +59,12 @@ class AdminPage(QWidget):
         self.select_menu("차단")
         self.load_members()
 
-    # 왼쪽 메뉴에 따라 회원 목록과 등급 화면 전환
+    # 왼쪽 메뉴에 따라 회원 목록, 공지, 등급 화면 전환
     def select_menu(self, name):
         for button in self.menu_buttons:
             button.setChecked(button.text() == name)
+
+        # 1. 회원등급 화면 처리
         if name == "회원등급":
             self.list_box.setVisible(False)
             self.member_scroll.setVisible(False)
@@ -68,11 +72,42 @@ class AdminPage(QWidget):
             self.next_button.setVisible(False)
             self.page_label.setVisible(False)
             self.action_button.setVisible(False)
+            if hasattr(self, "notice_widget"):
+                self.notice_widget.setVisible(False)
             self.grade_table.setVisible(True)
             self.grade_save_button.setVisible(True)
+            self.title_label.setVisible(True)
             self.title_label.setText("회원등급")
             self.load_grades()
             return
+
+        # 2. 공지 화면 처리
+        if name == "공지":
+            self.list_box.setVisible(False)
+            self.member_scroll.setVisible(False)
+            self.prev_button.setVisible(False)
+            self.next_button.setVisible(False)
+            self.page_label.setVisible(False)
+            self.action_button.setVisible(False)
+            self.grade_table.setVisible(False)
+            self.grade_save_button.setVisible(False)
+            self.title_label.setVisible(False)  # 공지 위젯 내부에 타이틀이 있으므로 숨김
+
+            if not hasattr(self, "notice_widget"):
+                self.notice_widget = AdminNoticeContentWidget(session=self.session, parent=self)
+                self.content_layout.addWidget(self.notice_widget)
+                self.content_layout.setStretch(self.content_layout.indexOf(self.notice_widget), 1)
+            
+            self.notice_widget.setMinimumSize(400, 300)
+            self.notice_widget.setVisible(True)
+            return
+
+        # 3. 차단 / 차단 풀기 화면 처리
+        if hasattr(self, "notice_widget"):
+            self.notice_widget.setVisible(False)
+        self.grade_table.setVisible(False)
+        self.grade_save_button.setVisible(False)
+        self.title_label.setVisible(True)
 
         self.list_box.setVisible(True)
         self.member_scroll.setVisible(True)
@@ -80,8 +115,7 @@ class AdminPage(QWidget):
         self.next_button.setVisible(True)
         self.page_label.setVisible(True)
         self.action_button.setVisible(True)
-        self.grade_table.setVisible(False)
-        self.grade_save_button.setVisible(False)
+
         if name not in ("차단", "차단 풀기"):
             return
         self.mode = "unban" if name == "차단 풀기" else "ban"
