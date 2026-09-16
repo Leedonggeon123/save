@@ -11,17 +11,18 @@ FAST_URL = "http://10.10.10.107:8000"                                       # ap
 
 
 class FilePage:
-    def __init__(self, ui, user_id, grade, file_limit):
+    def __init__(self, ui, user_id, grade, file_limit, show_dashboard):
         self.ui = ui
                                                                                                            
         self.user_id = user_id
         self.grade = grade                                                                                   # 현재 로그인한 사용자의 등급 저장
         self.file_limit = file_limit                                                                        # 사용자에게 별도로 설정된 파일 제한값 저장
+        self.show_dashboard = show_dashboard                                                                    # 취소 버튼 클릭시
         
-        
+        self.ui.cancel_btn.clicked.connect(self.show_dashboard)
         grade_limit = {                                                                     # 등급 기본 클라우드 용량 단위는 Byte 이므로 MB에 1024 * 1024를 곱함
         "일반": 100 * 1024 * 1024,
-        "실버": 200 * 1024 * 1024,
+        "비지니스": 200 * 1024 * 1024,
         "VIP": 500 * 1024 * 1024,
         "VVIP": 1024 * 1024 * 1024
         }
@@ -52,25 +53,32 @@ class FilePage:
         table.verticalHeader().setVisible(False)                                                                                   # 테이블 왼쪽 숫자 숨기기
 
         self.ui.upload_btn.clicked.connect(self.upload_clicked)
-        self.ui.refresh_btn.clicked.connect(self.load_file_list)                                                             # 새로고침시 새 테이블 보여주기
         self.ui.delete_btn.clicked.connect(self.delete_checked_files)                                                       # 삭제 클릭시
 
 
-    def upload_clicked(self):                                                                                               # 파일 업로드
-        file_path, _ = QFileDialog.getOpenFileName(                                                                          # 파일탐색기 열기(선택한 파일 정보는 객체에 저장)
+   
+    def upload_clicked(self):  # 파일 업로드
+        # 파일 탐색기를 열어서 업로드할 파일을 선택합니다.
+        file_path, _ = QFileDialog.getOpenFileName(
             self.ui,
-            "업로드할 파일 선택",                                                                                            # 탐색기제목
+            "업로드할 파일 선택",
             str(self.upload_path)
         )
 
-
-        if file_path:                                                                                                     # 선택을 하면
+        # 파일을 선택했다면 업로드를 진행합니다.
+        if file_path:
             print("선택한 파일:", file_path)
 
-            file_size = Path(file_path).stat().st_size                                                                  # 선택한 파일 크기를 바이트 단위로 확인                 
+            # 선택한 파일의 크기를 Byte 단위로 확인합니다.
+            file_size = Path(file_path).stat().st_size
 
-            if file_size > self.max_file_size:                                                                              # 파일 크기가 제한 크기보다 크다면 경고창 띄우기    
-                max_mb = self.max_file_size / (1024 * 1024)                                                         # byte를 mb로 변환 해서 표시 
+            # --------------------------------------------------
+            # 1. 파일 크기 제한 확인
+            # --------------------------------------------------
+
+            # 파일 크기가 설정된 최대 파일 크기보다 크면 업로드하지 않습니다.
+            if file_size > self.max_file_size:
+                max_mb = self.max_file_size / (1024 * 1024)
 
                 QMessageBox.warning(
                     self.ui,
@@ -79,19 +87,78 @@ class FilePage:
                     f"현재 등급: {self.grade}\n"
                     f"최대 허용 크기: {max_mb:.0f}MB"
                 )
-                return                                                                                                      # 제한 걸리면 업로드 안하고 종료
-            
-            
-            with open(file_path, "rb") as file:                                                                              # 제한을 통과한 경우에만 기존 업로드 실행
-                response = requests.post(
-                    f"{FAST_URL}/files/upload",                                                                             # 서버에 업로드 요청
-                    params={"user_id": self.user_id},
-                    files={"upload_file": file}
+                return
+
+            # --------------------------------------------------
+            # 2. 클라우드 남은 용량 확인
+            # --------------------------------------------------
+
+            try:
+                # 서버에 현재 사용 중인 클라우드 용량을 요청합니다.
+                response = requests.get(
+                    f"{FAST_URL}/files/usage/{self.user_id}",
+                    timeout=15
                 )
 
-            print("업로드 결과:", response.status_code)
+            except requests.RequestException as error:
+                QMessageBox.warning(
+                    self.ui,
+                    "업로드 실패",
+                    f"클라우드 용량을 확인할 수 없습니다.\n{error}"
+                )
+                return
 
+            # 서버에서 정상적으로 용량 정보를 가져오지 못했다면 업로드하지 않습니다.
+            if response.status_code != 200:
+                QMessageBox.warning(
+                    self.ui,
+                    "업로드 실패",
+                    "현재 클라우드 용량을 확인할 수 없습니다."
+                )
+                return
 
+            # 서버에서 받은 용량 정보를 가져옵니다.
+            data = response.json()
+
+            # 사용 가능한 용량을 MB 단위로 가져옵니다.
+            available_mb = data["available_mb"]
+
+            # MB를 Byte 단위로 변환합니다.
+            available_bytes = available_mb * 1024 * 1024
+
+            # 파일 크기가 남은 클라우드 용량보다 크면 업로드하지 않습니다.
+            if file_size > available_bytes:
+                QMessageBox.warning(
+                    self.ui,
+                    "업로드 실패",
+                    f"클라우드 저장 공간이 부족합니다.\n"
+                    f"사용 가능한 용량: {available_mb:.2f}MB\n"
+                    f"파일 크기: {file_size / (1024 * 1024):.2f}MB"
+                )
+                return
+
+            # --------------------------------------------------
+            # 3. 모든 검사를 통과했으므로 실제 업로드
+            # --------------------------------------------------
+
+            with open(file_path, "rb") as file:
+                response = requests.post(
+                    f"{FAST_URL}/files/upload",
+                    params={
+                        "user_id": self.user_id
+                    },
+                    files={
+                        "upload_file": file
+                    }
+                )
+
+            # print("업로드 결과:", response.status_code)
+
+            # 업로드가 성공하면 파일 목록을 다시 불러옵니다.
+            if response.status_code == 200:
+                self.load_file_list()
+            else:
+                print(response.text)
 
 
                                                                                                                 # 다운로드 함수
@@ -109,8 +176,8 @@ class FilePage:
                 "파일 저장",
                 str(self.download_path / filename)
             )
-
             if save_path:
+                print("다운로드 중...")
                 with open(save_path, "wb") as file:
                     file.write(response.content)
 
@@ -189,11 +256,7 @@ class FilePage:
                     }
                 )
 
-                print(
-                    "삭제 결과:",
-                    name_item.text(),
-                    response.status_code
-                )
+                print("삭제 결과:",name_item.text())
 
         self.load_file_list()                # 삭제 후 테이블 새로고침
    
@@ -217,11 +280,11 @@ class FilePage:
                 print("사용 용량 조회 실패:", response.text)
                 return
 
-            data = response.json()
+            # data = response.json()
 
-            used_mb = data["used_mb"]
+            # used_mb = data["used_mb"]
 
-            print(f"현재 사용 용량: {used_mb}MB")
+            # print(f"현재 사용 용량: {used_mb}MB")
 
         except requests.RequestException as error:
             print("사용 용량 조회 중 서버 연결 실패:", error)     

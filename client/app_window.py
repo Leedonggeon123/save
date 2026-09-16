@@ -127,13 +127,19 @@ class JewelClient(QStackedWidget):
                 self.file_ui,
                 self.session.user_id,
                 self.session.grade,
-                self.session.file_limit
+                self.session.file_limit,
+                self.show_dashboard
             )
 
         # 기존 FilePage를 다시 사용
         self.file_page.load_file_list()
         self.file_page.load_storage_usage()             # 클라우드 용량 확인
-        self.file_page.ui.show()
+        
+        
+        # 파일 화면을 JewelClient 안에 추가하고 화면 전환
+        self.addWidget(self.file_ui)
+        self.setCurrentWidget(self.file_ui)
+      
 
     
     def show_file_settings(self):               # 파일 설정 클릭시 
@@ -171,18 +177,21 @@ class JewelClient(QStackedWidget):
                 self.file_ui,
                 user_id,
                 grade,
-                file_limit
+                file_limit,
+                self.show_dashboard
             )
 
         # 파일 설정 기능 연결
         self.file_setting_page = File_Setting_Page(
             self.file_settings_ui,
             self.file_page.user_id,
-            self.file_page
+            self.file_page,
+            self.show_settings
         )
 
-        # 파일 설정 화면만 표시
-        self.file_settings_ui.show()
+        # 파일 설정 화면을 JewelClient 안에 추가
+        self.addWidget(self.file_settings_ui)
+        self.setCurrentWidget(self.file_settings_ui)
     
 
 # 이 파일을 직접 실행했을 때도 동일한 JewelClient를 실행

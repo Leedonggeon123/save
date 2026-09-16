@@ -23,8 +23,6 @@
 
 
 
-
-
 from .auth_db import db                                                                 # db연결
 from pathlib import Path                                                            # 파일 경로를 다루는 도구 
 import shutil                                                                        # 파일을 복사하는 도구 
@@ -51,7 +49,7 @@ router = APIRouter(                                                             
 
 
 
-@router.get("/settings/{user_id}")                                              # 
+@router.get("/settings/{user_id}")                                              
 def get_file_settings(user_id: int):
     # user_id로 DB에서 등급과 파일 제한값 조회
     with db() as cursor:
@@ -76,6 +74,10 @@ def get_file_settings(user_id: int):
         "grade": user["grade"],
         "file_limit": user["file_limit"]
     }
+
+
+
+
 
 @router.post("/upload")                                                             # POST/files/upload 주소를 만듬 
 async def upload_file(                                                              # 서버가 받을 값을 정하는 부분                                                                     
@@ -106,6 +108,28 @@ async def upload_file(                                                          
             detail=f"파일 저장 실패: {error}",
         )
 
+    
+     # 실제 저장된 파일의 크기를 확인합니다.
+    file_size = save_path.stat().st_size
+
+    # 파일의 메타데이터를 DB에 저장합니다.
+    with db() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO FILE_METADATA
+            (user_id, file_name, file_size, file_path)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (
+                user_id,
+                save_path.name,
+                file_size,
+                str(save_path),
+            )
+        )
+    
+    
+    
     return {                                                                            # 파일을 저장한뒤 결과를 json으로 보냄                                            
         "message": "파일 업로드 완료",                                                   # 성공메세지
         "file_name": save_path.name,                                                    # 저장된 파일 이름
@@ -113,14 +137,43 @@ async def upload_file(                                                          
         "file_path": str(save_path),                                                    # 저장된 위치        
     }
     
+    
+    
+    
 @router.get("")
 def get_file_list(user_id: int):
-    """
-    특정 사용자의 파일 목록을 반환한다.
-    """
+    # DB에서 현재 사용자의 파일 정보를 가져옵니다.
+    with db() as cursor:
+        cursor.execute(
+            """
+            SELECT file_id, file_name, file_size, file_path
+            FROM FILE_METADATA
+            WHERE user_id = %s
+            ORDER BY file_id
+            """,
+            (user_id,)
+        )
+        files = cursor.fetchall()
+
+    # 클라이언트가 기존과 같은 형식으로 받을 수 있도록 정리합니다.
+    file_list = []
+
+    for file_info in files:
+        file_list.append({
+            "type": "file",
+            "file_id": file_info["file_id"],
+            "file_name": file_info["file_name"],
+            "file_size": file_info["file_size"],
+            "file_path": file_info["file_path"],
+        })
+
     return {
-        "files": list_files(user_id)
+        "files": file_list
     }
+
+
+
+
 
 
 @router.get("/download", response_class=FileResponse)           # response_class=FileResponse (다운로드 응답이 파일형식으로 처리된다는 것을 Fast api에게 알려줌)
@@ -141,24 +194,30 @@ def download_file(file_path: str):
     
     
     
+    
+    
+    
 @router.delete("")
 def delete_server_file(file_path: str):
-    """
-    서버에 저장된 파일을 삭제한다.
-    """
     try:
         remove_file(file_path)
-
     except FileNotFoundError:
-        raise HTTPException(
-            status_code=404,
-            detail="파일을 찾을 수 없습니다.",
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+
+    # 실제 파일이 삭제된 후 DB에서도 해당 파일 기록을 삭제합니다.
+    with db() as cursor:
+        cursor.execute(
+            """
+            DELETE FROM FILE_METADATA
+            WHERE file_path = %s
+            """,
+            (file_path,)
         )
 
-    return {
-        "message": "파일 삭제 완료",
-        "file_path": file_path,
-    }
+    return {"message": "파일 삭제 완료", "file_path": file_path}
+    
+    
+    
     
     
 

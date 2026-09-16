@@ -8,13 +8,17 @@ from pathlib import Path
 
 
 class File_Setting_Page:
-    def __init__(self, ui, user_id, file_page):                                 
+    def __init__(self, ui, user_id, file_page, show_settings):                                 
         self.ui = ui
         self.user_id = user_id
         self.file_page = file_page                                                  # main에서 전달받은 file_page 객체를 저장 (다운로드 경로받기 위해 사용)
+        self.show_settings = show_settings                                           # 취소 버튼 눌렀을때
+
         self.file_size_limit = 0
         self.receive_path = Path("/mnt/c/Users/AIOT/Desktop")                       # 선택 안했을때 기본경로
         
+        
+        self.ui.cancel_btn.clicked.connect(self.show_settings)
         self.ui.receive_path_btn.clicked.connect(self.set_receive_path)                 # 받는 위치 설정 버튼
         self.ui.file_size_limit_btn.clicked.connect(self.set_file_size_limit)           # 파일 크기 제한 버튼
         self.ui.cloud_storage_btn.clicked.connect(self.check_cloud_storage)

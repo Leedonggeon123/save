@@ -54,28 +54,59 @@ def save_file(source_path: str, user_id: int, storage_root: str = "storage") -> 
     }
 
 
-def list_files(user_id: int, storage_root: str = "storage") -> list:            # 이 함수는 특정 사용자의 서버 파일 목록을 가져오는 함수
-                                                                                # 인자 user_id는 파일 목록을 확인할 사용자 번호
-                                                                             # 인자 storage_root는 파일이 저장된 기본 폴더
 
-    user_folder = Path(storage_root) / str(user_id)                             # 사용자별 저장 폴더 경로를 만듬
 
-    if not user_folder.exists():                                            # 사용자 폴더가 없으면 파일이 없는 것으로 처리
+
+
+def list_files(user_id: int, storage_root: str = "storage") -> list:                        # 이 함수는 특정 사용자의 파일과 폴더 목록을 가져오는 함수입니다.
+    # user_id는 파일 목록을 확인할 사용자의 번호입니다.
+    # storage_root는 파일과 폴더가 저장되어 있는 기본 폴더입니다.
+
+    user_folder = Path(storage_root) / str(user_id)
+    # 사용자별 저장 폴더의 경로를 만듭니다.
+    # 예: storage/1
+
+    if not user_folder.exists():
+        # 사용자 폴더가 없으면 파일과 폴더가 없는 것으로 처리합니다.
         return []
 
-    return [                                                                # 폴더 안의 파일들을 하나씩 확인
-        {
-            "file_name": file.name,                                             
-            "file_size": file.stat().st_size,
-            "file_path": str(file),
-        }
-        for file in sorted(                                                 # 업로드 순서처럼 보이기 위해 수정 시간 기준
-            user_folder.iterdir(),                                          # 사용자 업로드한 파일 항목     
-            key=lambda file: file.stat().st_atime,                          # key는 (sorted의 제공 옵션)어떤 기준으로 정렬할지  파일의 수정 시간을 기준으로 정렬 (file.stat().st_atime는 업로드한 파일을 수정시간기준으로 정렬해라 뜻)
-            reverse=True                                                    # 역순으로 
-            )                                            
-        if file.is_file()                                                       # 폴더가 아니라 실제 파일만 목록에 포함 시키는 조건 이 함수는 나중에 api가 호출해서 사용자에게 파일 목록을 보여줄때 사용
-    ]
+    file_list = []
+    # 파일과 폴더 정보를 저장할 빈 리스트를 만듭니다.
+
+    for item in user_folder.iterdir():
+        # 사용자의 저장 폴더 안에 있는 항목을 하나씩 확인합니다.
+        # 여기에는 파일과 폴더가 모두 들어올 수 있습니다.
+
+        if item.is_file():
+            # 현재 항목이 실제 파일인지 확인합니다.
+
+            file_list.append({
+                "type": "file",
+                "file_name": item.name,
+                "file_size": item.stat().st_size,
+                "file_path": str(item),
+            })
+            # 파일이라면 파일 정보를 리스트에 추가합니다.
+            # type을 file로 저장해서 클라이언트가 파일인지 구분할 수 있게 합니다.
+
+        elif item.is_dir():
+            # 현재 항목이 폴더인지 확인합니다.
+
+            file_list.append({
+                "type": "folder",
+                "file_name": item.name,
+                "file_size": 0,
+                "file_path": str(item),
+            })
+            # 폴더라면 폴더 정보를 리스트에 추가합니다.
+            # 폴더 자체에는 파일 크기가 없기 때문에 0으로 저장합니다.
+            # type을 folder로 저장해서 클라이언트가 폴더인지 구분할 수 있게 합니다.
+
+    return file_list
+    # 확인한 파일과 폴더 목록을 반환합니다.
+
+
+
 
 
 def delete_file(file_path: str) -> None:                                # 이 함수는 서버에 저장된 파일을 삭제하는 함수
