@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>NoticeConfirmDialog</class>
+ <widget class="QDialog" name="NoticeConfirmDialog">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>800</width><height>600</height></rect></property>
+  <property name="minimumSize"><size><width>800</width><height>600</height></size></property><property name="maximumSize"><size><width>800</width><height>600</height></size></property><property name="windowTitle"><string>Jewel</string></property>
+  <property name="styleSheet"><string notr="true">QDialog { background: #f7f7f7; } QFrame#titleBar { background: #a8cadf; } QPushButton#confirmButton, QPushButton#cancelButton { background: #49adf0; border: none; border-radius: 8px; font: 14px &quot;Malgun Gothic&quot;; } </string></property>
+  <widget class="QFrame" name="titleBar"><property name="geometry"><rect><x>0</x><y>0</y><width>800</width><height>40</height></rect></property><property name="frameShape"><enum>QFrame::NoFrame</enum></property>
+   <widget class="QPushButton" name="minimizeButton"><property name="geometry"><rect><x>728</x><y>0</y><width>34</width><height>40</height></rect></property><property name="text"><string>−</string></property><property name="styleSheet"><string notr="true">border: none; font: 19px Arial;</string></property></widget>
+   <widget class="QPushButton" name="closeButton"><property name="geometry"><rect><x>762</x><y>0</y><width>34</width><height>40</height></rect></property><property name="text"><string>×</string></property><property name="styleSheet"><string notr="true">border: none; font: 24px Arial;</string></property></widget>
+  </widget>
+  <widget class="QLabel" name="messageLabel"><property name="geometry"><rect><x>180</x><y>244</y><width>440</width><height>100</height></rect></property><property name="text"><string>공지(모두에게 보내기)\n하시겠습니까?</string></property><property name="alignment"><set>Qt::AlignCenter</set></property><property name="styleSheet"><string notr="true">font: 700 40px &quot;Malgun Gothic&quot;; color: #000;</string></property></widget>
+  <widget class="QPushButton" name="confirmButton"><property name="geometry"><rect><x>303</x><y>488</y><width>80</width><height>37</height></rect></property><property name="text"><string>확인</string></property></widget>
+  <widget class="QPushButton" name="cancelButton"><property name="geometry"><rect><x>420</x><y>488</y><width>80</width><height>37</height></rect></property><property name="text"><string>취소</string></property></widget>
+ </widget><resources/><connections/>
+</ui>
