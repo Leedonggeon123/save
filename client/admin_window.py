@@ -54,8 +54,9 @@ class AdminPage(QWidget):
         self.action_button.clicked.connect(self.block_selected)
         self.grade_save_button.clicked.connect(self.save_grades)
 
+        # 관리자 로그인 전에는 회원 목록 API를 호출하지 않습니다.
+        # 로그인 완료 후 app_window.show_admin()에서 최초 조회합니다.
         self.select_menu("차단")
-        self.load_members()
 
     # 왼쪽 메뉴에 따라 회원 목록과 등급 화면 전환
     def select_menu(self, name):
@@ -127,8 +128,13 @@ class AdminPage(QWidget):
             data = response.json()
             self.total_pages = max(1, int(data.get("total_pages", 1)))
             self.render_members(data.get("users", []), self.current_page)
-        except requests.RequestException:
-            QMessageBox.warning(self, "연결 오류", "서버에 연결할 수 없습니다.")
+        except requests.RequestException as error:
+            # 실제 요청 주소와 오류를 함께 표시해 원인(IP/포트/경로)을 확인합니다.
+            QMessageBox.warning(
+                self,
+                "연결 오류",
+                f"서버에 연결할 수 없습니다.\n{SERVER_URL}/api/admin/users\n{error}",
+            )
 
     # 현재 페이지 회원을 체크박스로 구성
     def render_members(self, members, page):

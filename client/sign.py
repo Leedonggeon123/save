@@ -1,7 +1,4 @@
-"""Jewel Cloud 회원가입 화면.
-
-화면 배치는 signup.ui에서 만들고 signup_design.py는 Designer가 생성한 파일
-실행: python sign.py
+"""Jewel Cloud 회원가입 화면
 """
 from __future__ import annotations
 import sys
@@ -161,6 +158,7 @@ class SignupWindow(QWidget):
             QMessageBox.warning(self, "입력 오류", "비밀번호가 일치하지 않습니다."); return
         if len(password) < 10:
             QMessageBox.warning(self, "입력 오류", "비밀번호는 10자 이상 입력해주세요."); return
+        # 비밀번호에 한글이 들어갔는지 검사
         if not all("!" <= character <= "~" for character in password):
             QMessageBox.warning(self, "입력 오류", "비밀번호에는 한글을 사용할 수 없습니다."); return
         if not any(character.isalpha() for character in password):
