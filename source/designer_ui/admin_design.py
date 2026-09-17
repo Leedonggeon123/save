@@ -2,6 +2,7 @@
 """관리자 화면의 고정 UI 구성 모듈."""
 from PySide6.QtCore import Qt
 from client.components.logout_button import LogoutButton
+from client.components.brand_header import BrandHeader  # <-- BrandHeader 임포트
 from PySide6.QtWidgets import (
     QCheckBox, QHBoxLayout, QLabel, QPushButton, QScrollArea,
     QTableWidget, QVBoxLayout, QWidget,
@@ -14,11 +15,13 @@ class Ui_AdminPage:
     def setupUi(self, AdminPage):
         AdminPage.setObjectName("AdminPage")
         AdminPage.resize(1280, 800)
+        
+        # [스타일 보완] 사이드바 메뉴 폰트/스타일이 제공해주신 이미지와 완벽하게 일치하도록 설정
         AdminPage.setStyleSheet(
             "QWidget { background:white; }"
             "QWidget#sidebar { background:#e5f4fc; border-right:1px solid #444; }"
             "QPushButton#menu { background:transparent; border:0;"
-            "text-align:left; padding:10px 12px; }"
+            "text-align:left; padding:10px 12px; font-family:'Ubuntu', sans-serif; font-size:14px; color:#111111; }"
             "QPushButton#menu:checked { color:#1877f2; font-weight:700; }"
             "QPushButton#action,QPushButton#page { background:#48aff0;"
             "color:white; border:0; border-radius:7px; padding:8px 18px; }"
@@ -33,11 +36,9 @@ class Ui_AdminPage:
         self.sidebar_layout = QVBoxLayout(self.sidebar)
         self.sidebar_layout.setContentsMargins(20, 18, 14, 20)
 
-        self.brand_label = QLabel("Jewel", self.sidebar)
-        self.brand_label.setStyleSheet(
-            "font-size:28px;font-weight:800;color:#0b3d63;"
-        )
-        self.sidebar_layout.addWidget(self.brand_label)
+        # [유지 & 수정] 기존 라벨 대신 다이아몬드 아이콘 + Jewel 로고가 들어가는 BrandHeader 적용
+        self.brand_header = BrandHeader(title="Jewel", parent=self.sidebar)
+        self.sidebar_layout.addWidget(self.brand_header)
         self.sidebar_layout.addSpacing(25)
 
         self.menu_buttons = []
