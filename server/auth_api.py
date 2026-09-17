@@ -26,6 +26,7 @@ class EmailRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=50)
+    phone: str = Field(pattern=r"^010-\d{4}-\d{4}$")
     password: str = Field(min_length=10, max_length=128)
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
@@ -33,6 +34,10 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+class FindIdRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    phone: str = Field(pattern=r"^010-\d{4}-\d{4}$")
 
 # 기본 발신 이메일 수정 요청 형식
 class SenderEmailUpdate(BaseModel):
@@ -43,6 +48,7 @@ class SenderEmailUpdate(BaseModel):
 class ProfileUpdate(BaseModel):
     user_id: int
     name: str = Field(min_length=1, max_length=50)
+    phone: str = Field(pattern=r"^010-\d{4}-\d{4}$")
     password: str | None = Field(default=None, min_length=10, max_length=128)
 
 # 인증번호 확인 요청 형식
@@ -131,7 +137,7 @@ def signup(request: SignupRequest):
             c.execute("UPDATE email_verification SET attempts=attempts+1 WHERE email=%s", (email,))
             raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
         try:
-            c.execute("INSERT INTO `USER`(email,password_hash,name) VALUES(%s,%s,%s)", (email, hash_password(request.password), request.name))
+            c.execute("INSERT INTO `USER`(email,password_hash,name,phone) VALUES(%s,%s,%s,%s)", (email, hash_password(request.password), request.name, request.phone))
         except pymysql.IntegrityError as exc:
             raise HTTPException(409, "이미 가입된 이메일입니다.") from exc
         user_id = c.lastrowid
@@ -169,6 +175,16 @@ def verify_code(request: CodeCheckRequest):
 
 
 # USER에서 계정을 조회하고 비밀번호 검증
+@router.post("/find-id")
+def find_id(request: FindIdRequest):
+    """이름과 전화번호가 일치하는 회원의 이메일 아이디를 반환합니다."""
+    with db() as c:
+        c.execute("SELECT email FROM `USER` WHERE name=%s AND phone=%s LIMIT 1", (request.name, request.phone))
+        user = c.fetchone()
+    if not user:
+        raise HTTPException(404, "일치하는 회원 정보가 없습니다.")
+    return {"email": user["email"]}
+
 @router.post("/login")
 def login(request: LoginRequest):
     """이메일과 해시 비밀번호를 비교해 로그인합니다."""
@@ -335,11 +351,21 @@ def update_profile(request: ProfileUpdate):
             raise HTTPException(404, "사용자를 찾을 수 없습니다.")
         if request.password:
             c.execute(
-                "UPDATE `USER` SET name=%s, password_hash=%s WHERE user_id=%s",
-                (request.name, hash_password(request.password), request.user_id),
+                "UPDATE `USER` SET name=%s, phone=%s, password_hash=%s WHERE user_id=%s",
+                (request.name, request.phone, hash_password(request.password), request.user_id),
             )
         else:
-            c.execute("UPDATE `USER` SET name=%s WHERE user_id=%s", (request.name, request.user_id))
+            c.execute("UPDATE `USER` SET name=%s, phone=%s WHERE user_id=%s", (request.name, request.phone, request.user_id))
     return {"saved": True, "message": "개인정보가 수정되었습니다."}
+
+
+@router.get("/settings/profile/{user_id}")
+def get_profile(user_id: int):
+    with db() as c:
+        c.execute("SELECT phone FROM `USER` WHERE user_id=%s", (user_id,))
+        row = c.fetchone()
+    if not row:
+        raise HTTPException(404, "사용자를 찾을 수 없습니다.")
+    return {"phone": row.get("phone") or ""}
 
 
