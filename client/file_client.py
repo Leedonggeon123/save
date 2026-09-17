@@ -1,3 +1,4 @@
+import os
 import requests
 import sys
 
@@ -8,7 +9,7 @@ from PySide6.QtUiTools import QUiLoader
 from pathlib import Path                                                     # 파일 경로 지정하기 위해 사용
 
 
-FAST_URL = "http://10.10.10.107:8000"                                       # api 서버에 연결할 아이피, 포트
+FAST_URL = os.getenv("JEWEL_SERVER_URL", "http://127.0.0.1:8000").rstrip("/")
 
 
 class FilePage:

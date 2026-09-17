@@ -16,12 +16,13 @@ class DashboardPage(QWidget):
     """
 
     # logout은 로그아웃 전환 함수, show_settings는 설정 화면 전환 함수
-    def __init__(self, logout, show_settings, show_file):
+    def __init__(self, logout, show_settings, show_file, show_mail=None):
         super().__init__()
         
         self.logout = logout
         self.show_settings = show_settings
         self.show_file = show_file                                                                              # 파일 버튼 클릭했을떄 실행할 함수를 저장
+        self.show_mail = show_mail
         self.setStyleSheet(
             "QWidget { background: white; }"
             "QLabel#brand { color:#0b3d63; font-size:32px; font-weight:800; }"
@@ -37,7 +38,17 @@ class DashboardPage(QWidget):
 
         # 로고, 서비스 이름
         header = QHBoxLayout()
+<<<<<<< HEAD
+        icon = QLabel()
+        icon_path = PROJECT_ROOT / "mail" / "mail_client" / "assets" / "jewel_cloud_logo.png"
+        icon.setPixmap(logo_pixmap(icon_path))
+        header.addWidget(icon)
+        brand = QLabel("JEWEL")
+        brand.setObjectName("brand")
+        header.addWidget(brand)
+=======
         header.addWidget(BrandHeader("JEWEL"))
+>>>>>>> origin/main
         header.addStretch()
         root.addLayout(header)
         root.addStretch(1)
@@ -67,7 +78,8 @@ class DashboardPage(QWidget):
 
     # 현재 메일 화면에 연결된 것 없음. 클릭 로그만 출력
     def open_mail(self):
-        print("메일 버튼 클릭", flush=True)
+        if self.show_mail:
+            self.show_mail()
 
     # 현재 파일 화면에 연결된 것 없음. 클릭 로그만 출력
     def open_file(self):

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MailWindow</class>
+ <widget class="QMainWindow" name="MailWindow">
+  <property name="windowTitle"><string>Jewel Cloud - 메일</string></property>
+  <property name="minimumSize"><size><width>980</width><height>640</height></size></property>
+  <property name="styleSheet"><string notr="true">QMainWindow { background: #f7f9fc; } QWidget#sidebar { background: #132238; } QLabel#brandLabel { color: white; font-size: 22px; font-weight: 700; } QLabel#brandSubLabel { color: #9eb6d6; font-size: 11px; } QPushButton#folderButton, QPushButton#composeButton { border: 0; border-radius: 8px; padding: 11px; text-align: left; } QPushButton#folderButton { color: #bdd0e8; background: transparent; } QPushButton#folderButton:hover, QPushButton#folderButton[active="true"] { color: white; background: #264363; } QPushButton#composeButton { color: white; background: #2f6bff; text-align: center; font-weight: 700; } QFrame#contentCard { background: white; border: 1px solid #e5eaf0; border-radius: 14px; } QLineEdit, QTextEdit { border: 1px solid #d7e0eb; border-radius: 8px; padding: 8px; background: white; } QPushButton#actionButton { background: #2f6bff; color: white; border-radius: 8px; padding: 9px 14px; } QTableWidget { background: white; border: 0; gridline-color: #eef1f5; } QHeaderView::section { color: #63748a; background: white; border: 0; padding: 9px; } QLabel#statusLabel { color: #63748a; }</string></property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="rootLayout">
+    <property name="spacing"><number>0</number></property>
+    <property name="leftMargin"><number>0</number></property>
+    <property name="topMargin"><number>0</number></property>
+    <property name="rightMargin"><number>0</number></property>
+    <property name="bottomMargin"><number>0</number></property>
+    <item>
+     <widget class="QWidget" name="sidebar">
+      <property name="minimumSize"><size><width>210</width><height>0</height></size></property>
+      <layout class="QVBoxLayout" name="sidebarLayout">
+       <property name="leftMargin"><number>18</number></property><property name="topMargin"><number>26</number></property><property name="rightMargin"><number>18</number></property><property name="bottomMargin"><number>20</number></property>
+       <item><widget class="QLabel" name="brandLabel"><property name="text"><string>Jewel Cloud</string></property></widget></item>
+       <item><widget class="QLabel" name="brandSubLabel"><property name="text"><string>파일과 메일을 연결하는 클라우드</string></property></widget></item>
+       <item><spacer name="topSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>18</height></size></property></spacer></item>
+       <item><widget class="QPushButton" name="allMailButton"><property name="objectName"><string>folderButton</string></property><property name="text"><string>전체 메일함</string></property><property name="checkable"><bool>true</bool></property><property name="checked"><bool>true</bool></property></widget></item><item><widget class="QPushButton" name="inboxButton"><property name="objectName"><string>folderButton</string></property><property name="text"><string>받은 메일</string></property><property name="checkable"><bool>true</bool></property></widget></item>
+       <item><widget class="QPushButton" name="sentButton"><property name="objectName"><string>folderButton</string></property><property name="text"><string>보낸 메일</string></property><property name="checkable"><bool>true</bool></property></widget></item>
+       <item><widget class="QPushButton" name="draftButton"><property name="objectName"><string>folderButton</string></property><property name="text"><string>임시 보관함</string></property><property name="checkable"><bool>true</bool></property></widget></item>
+       <item><spacer name="bottomSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
+       <item><widget class="QPushButton" name="composeButton"><property name="objectName"><string>composeButton</string></property><property name="text"><string>+ 메일 쓰기</string></property></widget></item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="mainArea">
+      <layout class="QVBoxLayout" name="mainLayout">
+       <property name="leftMargin"><number>30</number></property><property name="topMargin"><number>28</number></property><property name="rightMargin"><number>30</number></property><property name="bottomMargin"><number>24</number></property>
+       <item><widget class="QLabel" name="eyebrowLabel"><property name="text"><string>JEWEL CLOUD / MAIL</string></property></widget></item>
+       <item><widget class="QLabel" name="pageTitleLabel"><property name="text"><string>메일</string></property><property name="styleSheet"><string>font-size: 28px; font-weight: 700; color: #132238;</string></property></widget></item>
+       <item><widget class="QFrame" name="contentCard"><property name="objectName"><string>contentCard</string></property><property name="frameShape"><enum>QFrame::StyledPanel</enum></property><layout class="QVBoxLayout" name="contentLayout"><property name="leftMargin"><number>20</number></property><property name="topMargin"><number>18</number></property><property name="rightMargin"><number>20</number></property><property name="bottomMargin"><number>18</number></property><item><layout class="QHBoxLayout" name="toolbarLayout"><item><widget class="QLabel" name="folderTitleLabel"><property name="text"><string>받은 메일</string></property><property name="styleSheet"><string>font-size: 18px; font-weight: 700;</string></property></widget></item><item><spacer name="toolbarSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item><item><widget class="QPushButton" name="refreshButton"><property name="objectName"><string>actionButton</string></property><property name="text"><string>새로고침</string></property></widget></item></layout></item><item><widget class="QTableWidget" name="mailTable"><property name="columnCount"><number>3</number></property><property name="rowCount"><number>0</number></property><attribute name="horizontalHeaderStretchLastSection"><bool>true</bool></attribute><column><property name="text"><string>제목</string></property></column><column><property name="text"><string>보낸 사람</string></property></column><column><property name="text"><string>날짜</string></property></column></widget></item><item><widget class="QLabel" name="statusLabel"><property name="objectName"><string>statusLabel</string></property><property name="text"><string>서버에 연결되지 않았습니다.</string></property></widget></item></layout></widget></item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
