@@ -101,7 +101,6 @@ class JewelClient(QStackedWidget):
         self.personal_page.select_category(0)
         # 로그인한 사람의 이름과 이메일을 개인정보 화면에 표시
         self.personal_page.set_user_info(self.session.name, self.session.email)
-        self.personal_page.load_phone()
         # USER_SETTINGS의 기본 이메일을 서버에서 조회
         self.personal_page.load_default_email()  
         # 개인설정 페이지 전환

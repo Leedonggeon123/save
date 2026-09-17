@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
                                          
-from client.ui_common import PROJECT_ROOT, logo_pixmap
+from client.components.brand_header import BrandHeader
 
 # 로그인 성공 후 보이는 메인 메뉴 화면
 class DashboardPage(QWidget):
@@ -24,7 +24,7 @@ class DashboardPage(QWidget):
         self.show_file = show_file                                                                              # 파일 버튼 클릭했을떄 실행할 함수를 저장
         self.setStyleSheet(
             "QWidget { background: white; }"
-            "QLabel#brand { color:#0b3d63; font-size:28px; font-weight:800; }"
+            "QLabel#brand { color:#0b3d63; font-size:32px; font-weight:800; }"
             "QPushButton { background:#2379aa; color:white; border:0;"
             "border-radius:8px; font-size:16px; font-weight:600; }"
             "QPushButton:hover { background:#1d6d9c; }"
@@ -37,13 +37,7 @@ class DashboardPage(QWidget):
 
         # 로고, 서비스 이름
         header = QHBoxLayout()
-        icon = QLabel()
-        icon_path = PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png"
-        icon.setPixmap(logo_pixmap(icon_path))
-        header.addWidget(icon)
-        brand = QLabel("JEWEL")
-        brand.setObjectName("brand")
-        header.addWidget(brand)
+        header.addWidget(BrandHeader("JEWEL"))
         header.addStretch()
         root.addLayout(header)
         root.addStretch(1)

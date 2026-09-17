@@ -12,5 +12,5 @@ class LogoutButton(QPushButton):
         self.setFixedSize(160, 44)
         self.setStyleSheet(
             "QPushButton { background:#4295f4; color:white; border:0; "
-            "border-radius:8px; font-size:14px; padding:0; margin:0; }"
+            "border-radius:8px; font-size:14px; font-weight:600; padding:0; margin:0; }"
         )
