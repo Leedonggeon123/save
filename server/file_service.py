@@ -56,13 +56,6 @@ def save_file(source_path: str, user_id: int, storage_root: str = DEFAULT_STORAG
     }
 
 
-<<<<<<< HEAD
-def list_files(user_id: int, storage_root: str = DEFAULT_STORAGE) -> list:
-                                                                                # 인자 user_id는 파일 목록을 확인할 사용자 번호
-                                                                             # 인자 storage_root는 파일이 저장된 기본 폴더
-=======
->>>>>>> origin/main
-
 
 
 
@@ -188,8 +181,7 @@ def get_storage_usage(user_id: int, storage_root: str = DEFAULT_STORAGE) -> int:
 
     # 계산된 전체 용량을 Byte 단위로 반환합니다.
     return total_size
-<<<<<<< HEAD
-=======
+
 
 
 
@@ -231,4 +223,3 @@ def delete_folder(user_id: int, folder_name: str, storage_root: str = "storage")
 
     # 비어있는 폴더만 삭제합니다.
     folder_path.rmdir()
->>>>>>> origin/main

@@ -341,9 +341,6 @@ def get_file_usage(user_id: int):
         "user_id": user_id,
         "used_bytes": used_bytes,
         "used_mb": round(used_mb, 2),
-<<<<<<< HEAD
-    }
-=======
         "available_mb": round(available_mb, 2)          # 클라이언트한테 사용가능 용량 보냄
     }
     
@@ -406,4 +403,4 @@ def delete_user_folder(user_id: int, folder_name: str):
         "message": "폴더 삭제 완료",
         "folder_name": folder_name
     }
->>>>>>> origin/main
+

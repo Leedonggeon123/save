@@ -4,23 +4,13 @@
 비밀번호와 인증번호는 평문으로 DB에 저장하지 않음
 """
 from __future__ import annotations
-# secrets: 인증번호, 토큰 랜덤 값, smtplib: Gmail SMTP 서버로 인증 이메일 발송
 import os, secrets, smtplib
-# 인증번호 유효시간 계산
 from datetime import datetime, timedelta, timezone
-# 이메일 제목, 수신자, 본문 구성
 from email.message import EmailMessage
-# APIRouter: API 주소들 묶음, HTTPException: 오류 응답 생성
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
-<<<<<<< HEAD
-import sqlite3
-from .auth_db import db, ensure_auth_table, ensure_admin_column, hash_password, verify_password
-=======
 import pymysql
-# 클라이언트가 보낸 JSON 형식 검사
-from .auth_db import db, ensure_auth_table, hash_password, verify_password
->>>>>>> origin/main
+from .auth_db import db, ensure_auth_table, ensure_admin_column, hash_password, verify_password
 
 # 모든 인증 URL 앞에 /api를 붙이는 라우터
 # (예: http://localhost:8000/api/login)
@@ -36,7 +26,7 @@ class EmailRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=50)
-    password: str = Field(min_length=10, max_length=20)
+    password: str = Field(min_length=10, max_length=128)
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
 # 로그인 요청 형식
@@ -52,7 +42,7 @@ class PasswordResetRequest(BaseModel):
     name: str = Field(min_length=1, max_length=50)
     email: EmailStr
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
-    password: str = Field(min_length=10, max_length=20)
+    password: str = Field(min_length=10, max_length=128)
 
 
 # 기본 발신 이메일 수정 요청 형식
@@ -64,7 +54,7 @@ class SenderEmailUpdate(BaseModel):
 class ProfileUpdate(BaseModel):
     user_id: int
     name: str = Field(min_length=1, max_length=50)
-    password: str | None = Field(default=None, min_length=10, max_length=20)
+    password: str | None = Field(default=None, min_length=10, max_length=128)
 
 # 인증번호 확인 요청 형식
 class CodeCheckRequest(BaseModel):
@@ -80,8 +70,8 @@ def validate_gmail(email: str) -> None:
 # 회원가입과 비밀번호 변경에 공통 적용하는 비밀번호 검증
 def validate_password(password: str) -> None:
     """영문과 숫자를 포함한 ASCII 10자 이상 비밀번호인지 검사"""
-    if len(password) < 10 or len(password) > 20 or not all("!" <= ch <= "~" for ch in password):
-        raise HTTPException(422, "비밀번호는 영문·숫자·특수문자로 10자 이상 20자 이하 입력하세요.")
+    if len(password) < 10 or not all("!" <= ch <= "~" for ch in password):
+        raise HTTPException(422, "비밀번호는 영문·숫자·특수문자로 10자 이상 입력하세요.")
     if not any(ch.isascii() and ch.isalpha() for ch in password) or not any(ch.isdigit() for ch in password):
         raise HTTPException(422, "비밀번호에는 영문과 숫자를 각각 하나 이상 포함하세요.")
 
@@ -124,7 +114,7 @@ def request_code(request: EmailRequest):
             raise HTTPException(409, "이미 가입된 이메일입니다.")
         c.execute("""INSERT INTO email_verification(email,code_hash,expires_at,attempts)
                      VALUES(%s,%s,%s,0)
-                     ON CONFLICT(email) DO UPDATE SET code_hash=excluded.code_hash,expires_at=excluded.expires_at,attempts=0""",
+                     ON DUPLICATE KEY UPDATE code_hash=VALUES(code_hash),expires_at=VALUES(expires_at),attempts=0""",
                   (str(request.email), hash_password(code), expires))
     try:
         send_gmail_code(str(request.email), code)
@@ -152,8 +142,8 @@ def signup(request: SignupRequest):
             c.execute("UPDATE email_verification SET attempts=attempts+1 WHERE email=%s", (email,))
             raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
         try:
-            c.execute("INSERT INTO `USER`(email,password_hash,password_salt,name) VALUES(%s,%s,'',%s)", (email, hash_password(request.password), request.name))
-        except sqlite3.IntegrityError as exc:
+            c.execute("INSERT INTO `USER`(email,password_hash,name) VALUES(%s,%s,%s)", (email, hash_password(request.password), request.name))
+        except pymysql.IntegrityError as exc:
             raise HTTPException(409, "이미 가입된 이메일입니다.") from exc
         user_id = c.lastrowid
         # 가입 직후에는 로그인 이메일을 기본 발신 이메일로 저장
@@ -280,13 +270,9 @@ def login(request: LoginRequest):
         "access_token": token,
         "user_id": user["user_id"],
         "name": user["name"],
-<<<<<<< HEAD
-        "is_admin": bool(user["is_admin"])
-=======
         "is_admin": bool(user.get("is_admin", 0)),
         "grade": user["grade"],
         "file_limit": user["file_limit"]
->>>>>>> origin/main
     }
     
     
@@ -415,5 +401,3 @@ def update_profile(request: ProfileUpdate):
         else:
             c.execute("UPDATE `USER` SET name=%s WHERE user_id=%s", (request.name, request.user_id))
     return {"saved": True, "message": "개인정보가 수정되었습니다."}
-
-

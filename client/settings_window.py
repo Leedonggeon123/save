@@ -40,17 +40,16 @@ class SettingsPage(QWidget):
         root.setSpacing(0)
 
         header = QHBoxLayout()
-<<<<<<< HEAD
-        icon = QLabel()
-        icon_path = PROJECT_ROOT / "mail" / "mail_client" / "assets" / "jewel_cloud_logo.png"
-        icon.setPixmap(logo_pixmap(icon_path))
-        header.addWidget(icon)
-        brand = QLabel("JEWEL")
-        brand.setObjectName("brand")
-        header.addWidget(brand)
-=======
+
         header.addWidget(BrandHeader("JEWEL"))
->>>>>>> origin/main
+
+        header.addStretch()
+        logout_button = LogoutButton()
+        logout_button.clicked.connect(self.logout)
+        header.addWidget(logout_button)
+
+        root.addLayout(header)
+        root.addStretch(1)
         header.addStretch()
         logout_button = LogoutButton()
         logout_button.clicked.connect(self.logout)
@@ -128,23 +127,10 @@ class PersonalSettingsPage(QWidget):
         side = QVBoxLayout(sidebar)
         side.setContentsMargins(14, 18, 14, 20)
         side.setSpacing(8)
-<<<<<<< HEAD
-        logo_box = QWidget()
-        logo_box.setFixedHeight(80)
-        logo_box.setStyleSheet("background:transparent;")
-        logo_row = QHBoxLayout(logo_box)
-        logo_row.setContentsMargins(6, 4, 6, 4)
-        icon = QLabel()
-        icon_path = PROJECT_ROOT / "mail" / "mail_client" / "assets" / "jewel_cloud_logo.png"
-        icon.setPixmap(logo_pixmap(icon_path))
-        logo_row.addWidget(icon)
-        brand = QLabel("Jewel")
-        brand.setObjectName("brand")
-        logo_row.addWidget(brand)
-        side.addWidget(logo_box)
-=======
+
+        side.addSpacing(18)
+
         side.addWidget(BrandHeader("JEWEL"))
->>>>>>> origin/main
         side.addSpacing(18)
 
         self.category_buttons = []

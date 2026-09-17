@@ -16,12 +16,12 @@ from client.session import UserSession
 from PySide6.QtUiTools import QUiLoader
 from client.file_client import FilePage                                                     # 파일 파트 추가
 from client.file_settings import File_Setting_Page         
-<<<<<<< HEAD
+
 from client.ui_common import PROJECT_ROOT
 from client.mail_management_window import MailManagementController
-=======
+
 from client.ui_common import PROJECT_ROOT, logo_pixmap
->>>>>>> origin/main
+
 
 
 class JewelClient(QStackedWidget):

@@ -1,55 +1,47 @@
-"""로컬 실행용 SQLite 인증 DB 유틸리티."""
+"""인증 API가 MariaDB를 사용하도록 돕는 DB 유틸리티 모듈입니다."""
 from __future__ import annotations
 import hashlib  # 비밀번호 해시 계산에 사용합니다.
 import hmac  # 해시 비교를 안전하게 수행합니다.
 import os  # .env에서 DB 접속 설정을 읽습니다.
 import secrets  # 랜덤 salt를 생성합니다.
-import sqlite3
-import re
 from contextlib import contextmanager  # commit/rollback을 자동화합니다.
 from pathlib import Path
 from typing import Iterator
+import pymysql  # MariaDB 접속 드라이버입니다.
 from dotenv import load_dotenv  # .env 로더입니다.
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(PROJECT_ROOT / ".env", override=True)
-DB_PATH = Path(os.getenv("CLOUD_DB_PATH", str(PROJECT_ROOT / "mail" / "mail_client" / "data" / "jewel_cloud.sqlite3")))
+# 프로젝트 루트의 .env에서 DB 접속 설정을 읽습니다.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=True)
 
 
-class SQLiteCursor:
-    """기존 MySQL SQL 표기를 로컬 SQLite에서 호환시키는 얇은 어댑터."""
-    def __init__(self, cursor: sqlite3.Cursor):
-        self._cursor = cursor
-
-    def execute(self, sql, parameters=()):
-        sql = sql.replace("%s", "?")
-        sql = re.sub(r"\s+FOR UPDATE\b", "", sql, flags=re.IGNORECASE)
-        return self._cursor.execute(sql, parameters)
-
-    def __getattr__(self, name):
-        return getattr(self._cursor, name)
-
-
-def connect() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(DB_PATH, timeout=30)
-    connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA foreign_keys=ON")
-    return connection
+def connect():
+    """환경변수로 MariaDB 연결을 생성합니다."""
+    return pymysql.connect(
+        host=os.getenv("DB_HOST", "127.0.0.1"),  # DB 서버 주소입니다.
+        port=int(os.getenv("DB_PORT", "3306")),  # MariaDB 포트입니다.
+        user=os.environ["DB_USER"],  # DB 계정입니다.
+        password=os.environ["DB_PASSWORD"],  # DB 비밀번호입니다.
+        database=os.getenv("DB_NAME", "jewel_cloud"),  # 사용할 DB입니다.
+        charset="utf8mb4",  # 한글 저장용 문자셋입니다.
+        cursorclass=pymysql.cursors.DictCursor,  # 조회 결과를 dict로 받습니다.
+        autocommit=False,  # 작업 완료 후 직접 commit합니다.
+        connect_timeout=5,  # 연결 대기 시간을 제한합니다.
+    )
 
 
 @contextmanager
-def db() -> Iterator[SQLiteCursor]:
-    connection = connect()
+def db() -> Iterator[pymysql.cursors.DictCursor]:
+    """SQL 성공 시 commit하고 오류 시 rollback하는 DB 작업 관리자입니다."""
+    connection = connect()  # 요청마다 DB 연결을 생성합니다.
     try:
-        cursor = SQLiteCursor(connection.cursor())
-        yield cursor
-        connection.commit()
+        with connection.cursor() as cursor:  # SQL 실행용 cursor를 엽니다.
+            yield cursor  # auth_api.py가 이 cursor를 사용합니다.
+        connection.commit()  # 모든 SQL이 성공하면 변경을 확정합니다.
     except Exception:
-        connection.rollback()
-        raise
+        connection.rollback()  # 하나라도 실패하면 변경을 취소합니다.
+        raise  # 원래 오류를 API 계층으로 전달합니다.
     finally:
-        connection.close()
+        connection.close()  # 연결을 닫아 DB 자원을 반환합니다.
 
 
 def ensure_auth_table() -> None:
@@ -62,7 +54,7 @@ def ensure_auth_table() -> None:
               expires_at DATETIME NOT NULL,
               attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
               created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )"""
+            ) ENGINE=InnoDB"""
         )
 
 
@@ -76,15 +68,13 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, stored: str) -> bool:
     """입력값을 저장된 해시와 비교해 일치 여부를 반환합니다."""
     try:
-        parts = stored.split("$")
-        if len(parts) == 4 and parts[0] == "pbkdf2_sha256":
-            _, rounds, salt, digest = parts
-            candidate = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt), int(rounds))
-            return hmac.compare_digest(candidate.hex(), digest)
-        if len(parts) == 2:
-            salt, digest = parts
-            candidate = hashlib.scrypt(password.encode(), salt=salt.encode(), n=16384, r=8, p=1, dklen=64)
-            return hmac.compare_digest(candidate.hex(), digest)
+        algorithm, rounds, salt, digest = stored.split("$")  # 저장값을 분리합니다.
+        candidate = hashlib.pbkdf2_hmac(
+            "sha256", password.encode(), bytes.fromhex(salt), int(rounds)
+        )  # 저장된 salt와 반복 횟수로 재계산합니다.
+        return algorithm == "pbkdf2_sha256" and hmac.compare_digest(
+            candidate.hex(), digest
+        )  # 계산 결과와 저장된 해시를 안전하게 비교합니다.
     except (ValueError, TypeError):
         return False  # 해시 형식이 잘못되면 인증 실패입니다.
 
@@ -94,12 +84,15 @@ def ensure_admin_column() -> None:
     with db() as cursor:
         cursor.execute(
             """SELECT COUNT(*) AS column_count
-               FROM pragma_table_info('USER')
-               WHERE name='is_admin'""",
+               FROM INFORMATION_SCHEMA.COLUMNS
+               WHERE TABLE_SCHEMA=%s
+                 AND TABLE_NAME='USER'
+                 AND COLUMN_NAME='is_admin'""",
+            (os.getenv("DB_NAME", "jewel_cloud"),),
         )
         exists = cursor.fetchone()["column_count"]
         if not exists:
             table_name = chr(96) + "USER" + chr(96)
             cursor.execute(
-                "ALTER TABLE " + table_name + " ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
+                "ALTER TABLE " + table_name + " ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0"
             )

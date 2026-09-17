@@ -35,20 +35,9 @@ class DashboardPage(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(14, 18, 24, 24)
         root.setSpacing(0)
-
-        # 로고, 서비스 이름
+  
         header = QHBoxLayout()
-<<<<<<< HEAD
-        icon = QLabel()
-        icon_path = PROJECT_ROOT / "mail" / "mail_client" / "assets" / "jewel_cloud_logo.png"
-        icon.setPixmap(logo_pixmap(icon_path))
-        header.addWidget(icon)
-        brand = QLabel("JEWEL")
-        brand.setObjectName("brand")
-        header.addWidget(brand)
-=======
         header.addWidget(BrandHeader("JEWEL"))
->>>>>>> origin/main
         header.addStretch()
         root.addLayout(header)
         root.addStretch(1)
