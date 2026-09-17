@@ -4,15 +4,26 @@
 비밀번호와 인증번호는 평문으로 DB에 저장하지 않음
 """
 from __future__ import annotations
+# secrets: 인증번호, 토큰 랜덤 값, smtplib: Gmail SMTP 서버로 인증 이메일 발송
 import os, secrets, smtplib
+# 인증번호 유효시간 계산
 from datetime import datetime, timedelta, timezone
+# 이메일 제목, 수신자, 본문 구성
 from email.message import EmailMessage
+# APIRouter: API 주소들 묶음, HTTPException: 오류 응답 생성
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
+<<<<<<< HEAD
 import sqlite3
 from .auth_db import db, ensure_auth_table, ensure_admin_column, hash_password, verify_password
+=======
+import pymysql
+# 클라이언트가 보낸 JSON 형식 검사
+from .auth_db import db, ensure_auth_table, hash_password, verify_password
+>>>>>>> origin/main
 
 # 모든 인증 URL 앞에 /api를 붙이는 라우터
+# (예: http://localhost:8000/api/login)
 router = APIRouter(prefix="/api", tags=["auth"])
 # 인증번호는 발송 후 10분 동안만 유효
 CODE_TTL_MINUTES = 10
@@ -25,13 +36,24 @@ class EmailRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=50)
-    password: str = Field(min_length=10, max_length=128)
+    password: str = Field(min_length=10, max_length=20)
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
 # 로그인 요청 형식
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+class PasswordResetCodeRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    email: EmailStr
+
+class PasswordResetRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    email: EmailStr
+    verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
+    password: str = Field(min_length=10, max_length=20)
+
 
 # 기본 발신 이메일 수정 요청 형식
 class SenderEmailUpdate(BaseModel):
@@ -42,7 +64,7 @@ class SenderEmailUpdate(BaseModel):
 class ProfileUpdate(BaseModel):
     user_id: int
     name: str = Field(min_length=1, max_length=50)
-    password: str | None = Field(default=None, min_length=10, max_length=128)
+    password: str | None = Field(default=None, min_length=10, max_length=20)
 
 # 인증번호 확인 요청 형식
 class CodeCheckRequest(BaseModel):
@@ -58,8 +80,8 @@ def validate_gmail(email: str) -> None:
 # 회원가입과 비밀번호 변경에 공통 적용하는 비밀번호 검증
 def validate_password(password: str) -> None:
     """영문과 숫자를 포함한 ASCII 10자 이상 비밀번호인지 검사"""
-    if len(password) < 10 or not all("!" <= ch <= "~" for ch in password):
-        raise HTTPException(422, "비밀번호는 영문·숫자·특수문자로 10자 이상 입력하세요.")
+    if len(password) < 10 or len(password) > 20 or not all("!" <= ch <= "~" for ch in password):
+        raise HTTPException(422, "비밀번호는 영문·숫자·특수문자로 10자 이상 20자 이하 입력하세요.")
     if not any(ch.isascii() and ch.isalpha() for ch in password) or not any(ch.isdigit() for ch in password):
         raise HTTPException(422, "비밀번호에는 영문과 숫자를 각각 하나 이상 포함하세요.")
 
@@ -167,16 +189,62 @@ def verify_code(request: CodeCheckRequest):
 
 
 
-# USER에서 계정을 조회하고 비밀번호 검증
+# 비밀번호 재설정용 인증 메일 발송
+@router.post("/password/reset/request-code", status_code=202)
+def request_password_reset_code(request: PasswordResetCodeRequest):
+    """이름과 이메일이 일치하는 계정에 비밀번호 재설정 인증번호를 보냅니다."""
+    validate_gmail(str(request.email))
+    email = str(request.email)
+    with db() as c:
+        c.execute("SELECT user_id FROM `USER` WHERE name=%s AND email=%s LIMIT 1", (request.name, email))
+        if not c.fetchone():
+            raise HTTPException(404, "이름과 이메일이 일치하는 회원 정보가 없습니다.")
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=CODE_TTL_MINUTES)
+        c.execute("""INSERT INTO email_verification(email,code_hash,expires_at,attempts)
+                     VALUES(%s,%s,%s,0)
+                     ON DUPLICATE KEY UPDATE code_hash=VALUES(code_hash),expires_at=VALUES(expires_at),attempts=0""",
+                  (email, hash_password(code), expires))
+    try:
+        send_gmail_code(email, code)
+    except HTTPException:
+        with db() as c:
+            c.execute("DELETE FROM email_verification WHERE email=%s", (email,))
+        raise
+    return {"message": "비밀번호 재설정 인증 메일을 전송했습니다."}
+
+# 인증번호와 이름·이메일을 확인한 뒤 비밀번호를 새 값으로 변경
+@router.post("/password/reset")
+def reset_password(request: PasswordResetRequest):
+    """유효한 이메일 인증번호가 있을 때만 비밀번호를 변경합니다."""
+    validate_gmail(str(request.email))
+    validate_password(request.password)
+    email = str(request.email)
+    with db() as c:
+        c.execute("SELECT user_id FROM `USER` WHERE name=%s AND email=%s LIMIT 1", (request.name, email))
+        user = c.fetchone()
+        if not user:
+            raise HTTPException(404, "이름과 이메일이 일치하는 회원 정보가 없습니다.")
+        c.execute("SELECT * FROM email_verification WHERE email=%s FOR UPDATE", (email,))
+        row = c.fetchone()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        if not row or row["expires_at"] < now:
+            raise HTTPException(400, "인증 코드가 없거나 만료되었습니다.")
+        if row["attempts"] >= 5 or not verify_password(request.verification_code, row["code_hash"]):
+            c.execute("UPDATE email_verification SET attempts=attempts+1 WHERE email=%s", (email,))
+            raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
+        c.execute("UPDATE `USER` SET password_hash=%s WHERE user_id=%s", (hash_password(request.password), user["user_id"]))
+        c.execute("DELETE FROM email_verification WHERE email=%s", (email,))
+    return {"message": "비밀번호가 변경되었습니다."}
+
 @router.post("/login")
 def login(request: LoginRequest):
     """이메일과 해시 비밀번호를 비교해 로그인합니다."""
 
-
     with db() as c:
         c.execute(
             """
-            SELECT user_id, email, password_hash, name, is_banned, is_admin
+            SELECT user_id, email, password_hash, name, is_banned, is_admin, grade, file_limit
             FROM `USER`
             WHERE email=%s
             """,
@@ -212,13 +280,97 @@ def login(request: LoginRequest):
         "access_token": token,
         "user_id": user["user_id"],
         "name": user["name"],
+<<<<<<< HEAD
         "is_admin": bool(user["is_admin"])
+=======
+        "is_admin": bool(user.get("is_admin", 0)),
+        "grade": user["grade"],
+        "file_limit": user["file_limit"]
+>>>>>>> origin/main
     }
     
     
     
+    # 관리자 목록·차단 요청에 공통으로 사용하는 입력 형식
+class AdminUsersRequest(BaseModel):
+    admin_user_id: int
+    user_ids: list[int] = Field(min_length=1)
+
+
+# 요청한 사용자가 관리자 계정인지 DB에서 확인
+def require_admin(admin_user_id: int) -> None:
+    with db() as c:
+        c.execute("SELECT is_admin FROM " + chr(96) + "USER" + chr(96) + " WHERE user_id=%s",(admin_user_id,)); row=c.fetchone()
+    if not row or not bool(row.get("is_admin",0)): raise HTTPException(403,"관리자 권한이 필요합니다.")
+
+# 차단 상태와 페이지 번호에 맞는 회원 목록 조회
+@router.get("/admin/users")
+def get_admin_users(admin_user_id: int,page: int=1,page_size: int=10,banned: bool=False):
+    # 페이지 범위를 먼저 제한해 과도한 조회를 막습니다.
+    page=max(1,page); page_size=min(50,max(1,page_size)); offset=(page-1)*page_size
+    # 권한 확인과 목록 조회를 같은 DB 연결에서 처리합니다.
+    # 기존에는 DB 연결을 두 번 열어 원격 MariaDB 환경에서 지연이 커질 수 있었습니다.
+    with db() as c:
+        c.execute("SELECT is_admin FROM " + chr(96) + "USER" + chr(96) + " WHERE user_id=%s", (admin_user_id,))
+        admin_row = c.fetchone()
+        if not admin_row or not bool(admin_row.get("is_admin", 0)):
+            raise HTTPException(403, "관리자 권한이 필요합니다.")
+        c.execute("SELECT COUNT(*) AS total FROM " + chr(96) + "USER" + chr(96) + " WHERE is_admin=0 AND is_banned=%s", (int(banned),))
+        total=int(c.fetchone()["total"])
+        c.execute("SELECT user_id,email,name,is_banned FROM " + chr(96) + "USER" + chr(96) + " WHERE is_admin=0 AND is_banned=%s ORDER BY user_id LIMIT %s OFFSET %s", (int(banned),page_size,offset))
+        users=c.fetchall()
+    return {"users":users,"page":page,"page_size":page_size,"total":total,"total_pages":max(1,(total+page_size-1)//page_size)}
+
+
+# 선택 회원을 차단 상태로 변경
+@router.post("/admin/users/ban")
+def ban_admin_users(request: AdminUsersRequest):
+    require_admin(request.admin_user_id); targets=[x for x in request.user_ids if x != request.admin_user_id]
+    if not targets: raise HTTPException(400,"차단할 회원이 없습니다.")
+    # 관리자 계정은 차단 대상에서 제외
+    with db() as c:
+        marks=",".join(["%s"]*len(targets)); c.execute("UPDATE " + chr(96) + "USER" + chr(96) + " SET is_banned=1 WHERE user_id IN ("+marks+") AND is_admin=0",tuple(targets)); changed=c.rowcount
+    return {"banned":changed}
+
+# 선택 회원의 차단 상태 해제
+@router.post("/admin/users/unban")
+def unban_admin_users(request: AdminUsersRequest):
+    require_admin(request.admin_user_id)
+    targets = [x for x in request.user_ids if x != request.admin_user_id]
+    if not targets: raise HTTPException(400, "해제할 회원이 없습니다.")
+    with db() as c:
+        marks = ",".join(["%s"] * len(targets))
+        c.execute("UPDATE " + chr(96) + "USER" + chr(96) + " SET is_banned=0 WHERE user_id IN (" + marks + ") AND is_admin=0", tuple(targets))
+        changed = c.rowcount
+    return {"unbanned": changed}
+
+# 회원등급 변경 요청 형식
+class GradeUpdateRequest(BaseModel):
+    admin_user_id: int
+    user_id: int
+    grade: str
+
+# 일반 회원의 이름·이메일·현재 등급 조회
+@router.get("/admin/grades")
+def get_admin_grades(admin_user_id: int):
+    require_admin(admin_user_id)
+    with db() as c:
+        c.execute("SELECT user_id,name,email,grade FROM " + chr(96) + "USER" + chr(96) + " WHERE is_admin=0 ORDER BY user_id")
+        users=c.fetchall()
+    return {"users":users}
+
+# 허용된 등급으로 회원 정보 수정
+@router.put("/admin/users/grade")
+def update_admin_grade(request: GradeUpdateRequest):
+    require_admin(request.admin_user_id)
+    # 화면에서 지원하는 등급만 허용
+    if request.grade not in {"일반","비즈니스","VIP","VVIP"}: raise HTTPException(422,"올바르지 않은 등급입니다.")
+    with db() as c:
+        c.execute("UPDATE " + chr(96) + "USER" + chr(96) + " SET grade=%s WHERE user_id=%s AND is_admin=0",(request.grade,request.user_id))
+        if c.rowcount == 0: raise HTTPException(404,"회원을 찾을 수 없습니다.")
+    return {"updated":True,"grade":request.grade}
     
-    
+
 # 기본 이메일을 USER_SETTINGS에 저장하거나 수정
 @router.put("/settings/default-sender-email")
 def update_default_sender_email(request: SenderEmailUpdate):
@@ -265,13 +417,3 @@ def update_profile(request: ProfileUpdate):
     return {"saved": True, "message": "개인정보가 수정되었습니다."}
 
 
-
-
-
-
-
-
-
-
-
-                                                                                        # 파일 설정 부분

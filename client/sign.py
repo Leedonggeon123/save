@@ -1,7 +1,4 @@
-"""Jewel Cloud 회원가입 화면.
-
-화면 배치는 signup.ui에서 만들고 signup_design.py는 Designer가 생성한 파일
-실행: python sign.py
+"""Jewel Cloud 회원가입 화면
 """
 from __future__ import annotations
 import sys
@@ -9,7 +6,7 @@ from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton, QWidget
 from requests import RequestException
-from client import sign_server
+from client import signup_client
 from source.designer_ui.signup_design import Ui_Form
 
 class SignupWindow(QWidget):
@@ -33,7 +30,7 @@ class SignupWindow(QWidget):
         # 로그인 화면으로 돌아가는 버튼
         self.back_button = QPushButton("뒤로가기", self)
         # 버튼 이동
-        self.back_button.setGeometry(1125, 18, 120, 38)
+        self.back_button.setGeometry(1090, 18, 120, 38)
         self.back_button.setStyleSheet(
             "QPushButton { background:#4285f4; color:white; border:0; "
             "border-radius:6px; font-size:13px; }"
@@ -42,13 +39,17 @@ class SignupWindow(QWidget):
         self.back_button.setVisible(go_login is not None)
         # 세로 입력창 사이 간격
         self.ui.main_layout.setSpacing(14)
-        self.ui.main_layout.setContentsMargins(320, 28, 320, 20)
+        self.ui.main_layout.setContentsMargins(320, 58, 320, 20)
         # 남는 높이를 위젯 사이에 자동 분배하지 않고 아래쪽에 남김
         self.ui.main_layout.setAlignment(Qt.AlignTop)
         # 제목 영역과 입력 영역을 분리
-        self.ui.main_layout.insertSpacing(1, 24)
+        self.ui.main_layout.insertSpacing(1, 16)
         self.ui.email_layout.setSpacing(6)
         self.ui.code_layout.setSpacing(6)
+        # 버튼을 행의 아래쪽에 정렬해 입력칸보다 실제로 조금 내려 보이게 합니다.
+        self.ui.email_layout.setAlignment(self.ui.check_email_button, Qt.AlignBottom)
+        self.ui.code_layout.setAlignment(self.ui.send_code_button, Qt.AlignBottom)
+        self.ui.code_layout.setAlignment(self.ui.verify_code_button, Qt.AlignBottom)
         # 입력 위젯이 남는 공간을 모두 차지해 행 사이가 벌어지지 않도록 높이를 고정
         for field in (
             self.ui.name_input,
@@ -57,13 +58,13 @@ class SignupWindow(QWidget):
             self.ui.password_input,
             self.ui.password_confirm_input,
         ):
-            field.setFixedHeight(54)
+            field.setFixedHeight(50)
         for button in (
             self.ui.check_email_button,
             self.ui.send_code_button,
             self.ui.verify_code_button,
         ):
-            button.setFixedHeight(54)
+            button.setFixedHeight(62)
         self.ui.timer_label.setFixedHeight(18)
         self.ui.signup_button.setFixedHeight(60)
         self.remaining_seconds = 0
@@ -76,6 +77,34 @@ class SignupWindow(QWidget):
         self.ui.send_code_button.clicked.connect(self.send_code)
         self.ui.verify_code_button.clicked.connect(self.verify_code)
         self.ui.signup_button.clicked.connect(self.submit_signup)
+        # 확인을 마친 뒤 이메일이나 인증번호가 바뀌면 기존 확인 상태를 무효화합니다.
+        self.ui.email_input.textChanged.connect(self.reset_email_verification)
+        self.ui.code_input.textChanged.connect(self.reset_code_verification)
+        self._buttons_lowered = False
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not self._buttons_lowered:
+            self._buttons_lowered = True
+            QTimer.singleShot(0, self.lower_action_buttons)
+
+    def lower_action_buttons(self) -> None:
+        """레이아웃이 배치된 뒤 인증 관련 버튼만 2px 아래로 이동합니다."""
+        for button in (
+            self.ui.check_email_button,
+            self.ui.send_code_button,
+            self.ui.verify_code_button,
+        ):
+            button.move(button.x(), button.y() + 5)
+
+    def reset_email_verification(self, _text: str = "") -> None:
+        """이메일이 바뀌면 중복 확인과 인증번호 확인을 모두 다시 요구"""
+        self.email_is_available = False
+        self.code_is_verified = False
+
+    def reset_code_verification(self, _text: str = "") -> None:
+        """인증번호가 바뀌면 해당 인증번호의 확인 상태를 무효화"""
+        self.code_is_verified = False
 
     def reset_form(self) -> None:
         """회원가입 화면을 다시 열 때 이전 입력값을 모두 초기화"""
@@ -110,7 +139,7 @@ class SignupWindow(QWidget):
         if not email:
             QMessageBox.warning(self, "입력 오류", "구글 이메일을 입력해주세요."); return
         try:
-            sign_server.check_email(email)
+            signup_client.check_email(email)
             self.email_is_available = True
             QMessageBox.information(self, "확인", "사용 가능한 이메일입니다.")
         except (RequestException, ValueError) as error:
@@ -122,7 +151,7 @@ class SignupWindow(QWidget):
         if not email:
             QMessageBox.warning(self, "입력 오류", "구글 이메일을 입력해주세요."); return
         try:
-            sign_server.request_verification_code(email)
+            signup_client.request_verification_code(email)
             self.code_is_verified = False
             self.remaining_seconds = 600
             self.timer.start(); self.update_timer()
@@ -140,7 +169,7 @@ class SignupWindow(QWidget):
         if len(code) != 6 or not code.isdigit():
             QMessageBox.warning(self, "인증 실패", "인증번호는 숫자 6자리로 입력해주세요."); return
         try:
-            sign_server.verify_code(self.ui.email_input.text().strip(), code)
+            signup_client.verify_code(self.ui.email_input.text().strip(), code)
             self.code_is_verified = True
             QMessageBox.information(self, "확인", "인증번호가 일치합니다.")
         except (RequestException, ValueError) as error:
@@ -159,8 +188,9 @@ class SignupWindow(QWidget):
             QMessageBox.warning(self, "입력 오류", "이름을 입력해주세요."); return
         if password != self.ui.password_confirm_input.text():
             QMessageBox.warning(self, "입력 오류", "비밀번호가 일치하지 않습니다."); return
-        if len(password) < 10:
-            QMessageBox.warning(self, "입력 오류", "비밀번호는 10자 이상 입력해주세요."); return
+        if len(password) < 10 or len(password) > 20:
+            QMessageBox.warning(self, "입력 오류", "비밀번호는 10자 이상 20자 이하 입력해주세요."); return
+        # 비밀번호에 한글이 들어갔는지 검사
         if not all("!" <= character <= "~" for character in password):
             QMessageBox.warning(self, "입력 오류", "비밀번호에는 한글을 사용할 수 없습니다."); return
         if not any(character.isalpha() for character in password):
@@ -168,7 +198,7 @@ class SignupWindow(QWidget):
         if not any(character.isdigit() for character in password):
             QMessageBox.warning(self, "입력 오류", "비밀번호에 숫자를 하나 이상 포함해주세요."); return
         try:
-            sign_server.signup(email, name, password, self.ui.code_input.text().strip())
+            signup_client.signup(email, name, password, self.ui.code_input.text().strip())
             self.timer.stop(); QMessageBox.information(self, "가입 완료", "회원가입이 완료되었습니다.")
             if self.go_login:
                 self.go_login()

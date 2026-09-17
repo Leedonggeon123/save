@@ -16,8 +16,12 @@ from client.session import UserSession
 from PySide6.QtUiTools import QUiLoader
 from client.file_client import FilePage                                                     # 파일 파트 추가
 from client.file_settings import File_Setting_Page         
+<<<<<<< HEAD
 from client.ui_common import PROJECT_ROOT
 from client.mail_management_window import MailManagementController
+=======
+from client.ui_common import PROJECT_ROOT, logo_pixmap
+>>>>>>> origin/main
 
 
 class JewelClient(QStackedWidget):
@@ -43,7 +47,7 @@ class JewelClient(QStackedWidget):
         self.settings_page = SettingsPage(self.show_dashboard, self.show_login, self.show_personal, self.show_file_settings, self.show_mail_settings)
         # 개인설정 상세 페이지
         self.personal_page = PersonalSettingsPage(self.show_settings, self.show_login, self.session)
-        self.admin_page = AdminPage(self.show_login)
+        self.admin_page = AdminPage(self.show_login, self.session)
 
         # 생성한 페이지를 QStackedWidget에 등록
         self.addWidget(self.login_page)      # index 0: 로그인
@@ -72,12 +76,19 @@ class JewelClient(QStackedWidget):
         # 개인설정 페이지 초기화
         self.personal_page.select_category(0)
         self.session.clear()  
-        # 로그인 페이지
-        self.setCurrentWidget(self.login_page)  
+          
+          
+        # 이전 로그인 사용자의 파일 페이지 제거
+        if hasattr(self, "file_page"):
+            del self.file_page
+
+        self.setCurrentWidget(self.login_page) 
 
     def show_admin(self, access_token=None):
         """관리자 계정 로그인 성공 시 관리자 화면으로 이동합니다."""
         self.admin_page.access_token = access_token
+        # 관리자 로그인 완료 후 세션의 user_id로 회원 목록을 다시 조회
+        self.admin_page.load_members()
         self.setCurrentWidget(self.admin_page)
 
     def show_dashboard(self, access_token=None):
@@ -109,7 +120,7 @@ class JewelClient(QStackedWidget):
         # 개인설정에 들어올 때 서비스 화면부터 표시
         self.personal_page.select_category(0)
         # 로그인한 사람의 이름과 이메일을 개인정보 화면에 표시
-        self.personal_page.set_user_info(self.session.name, self.session.email)  
+        self.personal_page.set_user_info(self.session.name, self.session.email)
         # USER_SETTINGS의 기본 이메일을 서버에서 조회
         self.personal_page.load_default_email()  
         # 개인설정 페이지 전환
@@ -131,18 +142,34 @@ class JewelClient(QStackedWidget):
             )
 
             self.file_ui = loader.load(str(file_ui_path))
-
+            
+            
+                   
+            
             self.file_page = FilePage(
                 self.file_ui,
                 self.session.user_id,
                 self.session.grade,
-                self.session.file_limit
+                self.session.file_limit,
+                self.show_dashboard
             )
 
+        self.file_ui.cloud_img.setPixmap(
+            logo_pixmap(
+                PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png",
+                80,
+                80
+            )
+        )
         # 기존 FilePage를 다시 사용
         self.file_page.load_file_list()
         self.file_page.load_storage_usage()             # 클라우드 용량 확인
-        self.file_page.ui.show()
+        
+        
+        # 파일 화면을 JewelClient 안에 추가하고 화면 전환
+        self.addWidget(self.file_ui)
+        self.setCurrentWidget(self.file_ui)
+      
 
     
     def show_file_settings(self):               # 파일 설정 클릭시 
@@ -160,6 +187,14 @@ class JewelClient(QStackedWidget):
             str(settings_ui_path)
         )
 
+        
+        self.file_settings_ui.cloud_img.setPixmap(
+            logo_pixmap(
+                PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png",
+                80,
+                80
+            )
+        )
         # 파일 화면이 아직 만들어지지 않았다면
         # 설정 기능이 사용할 FilePage를 먼저 생성
         if not hasattr(self, "file_page"):
@@ -171,6 +206,8 @@ class JewelClient(QStackedWidget):
             )
 
             self.file_ui = loader.load(str(file_ui_path))
+            
+            
 
             user_id = self.session.user_id           # 로그인한 아이디
             grade = self.session.grade
@@ -180,18 +217,21 @@ class JewelClient(QStackedWidget):
                 self.file_ui,
                 user_id,
                 grade,
-                file_limit
+                file_limit,
+                self.show_dashboard
             )
 
         # 파일 설정 기능 연결
         self.file_setting_page = File_Setting_Page(
             self.file_settings_ui,
             self.file_page.user_id,
-            self.file_page
+            self.file_page,
+            self.show_settings
         )
 
-        # 파일 설정 화면만 표시
-        self.file_settings_ui.show()
+        # 파일 설정 화면을 JewelClient 안에 추가
+        self.addWidget(self.file_settings_ui)
+        self.setCurrentWidget(self.file_settings_ui)
     
 
 # 이 파일을 직접 실행했을 때도 동일한 JewelClient를 실행

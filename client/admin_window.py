@@ -1,131 +1,355 @@
-"""관리자 로그인 후 표시되는 관리자 전용 화면입니다."""
+"""관리자 화면 기능과 서버 API 연결."""
 from __future__ import annotations
 
+import requests
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QCheckBox,
-    QHBoxLayout,
-    QLabel,
-    QMessageBox,
-    QPushButton,
-    QScrollArea,
-    QVBoxLayout,
-    QWidget,
+    QAbstractItemView, QCheckBox, QComboBox, QMessageBox,
+    QTableWidgetItem, QWidget,
 )
 
+from source.designer_ui.admin_design import Ui_AdminPage, apply_admin_table_style
 from client.components.logout_button import LogoutButton
+from client.session import UserSession
+from client.ui_common import SERVER_URL
+from client.admin_client import AdminNoticeContentWidget  # 공지 위젯 임port
 
 
 class AdminPage(QWidget):
-    """관리자 메뉴와 회원 선택 영역을 표시하는 기본 관리자 화면입니다."""
+    """관리자 메뉴와 회원 관리 기능 연결."""
 
-    def __init__(self, logout):
+    PAGE_SIZE = 10
+
+    def __init__(self, logout, session=None):
         super().__init__()
+        self.ui = Ui_AdminPage()
+        self.ui.setupUi(self)
         self.logout = logout
-        self.setStyleSheet(
-            "QWidget { background:white; }"
-            "QWidget#sidebar { background:#e5f4fc; border-right:1px solid #444; }"
-            "QLabel#brand { color:#0b3d63; font-size:28px; font-weight:800; }"
-            "QPushButton#menu { background:transparent; color:#111; border:0;"
-            "text-align:left; padding:10px 12px; font-size:15px; }"
-            "QPushButton#menu:checked { color:#1877f2; font-weight:700; }"
-            "QPushButton#action { background:#48aff0; color:white; border:0;"
-            "border-radius:7px; padding:8px 18px; }"
-        )
+        self.session = session or UserSession()
+        self.mode = "ban"
+        self.current_page = 1
+        self.total_pages = 1
+        self.member_checks = []
+        self.grade_rows = []
 
-        outer = QHBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(0)
+        # Designer UI 위젯을 기능 코드에서 사용
+        self.menu_buttons = self.ui.menu_buttons
+        self.title_label = self.ui.title_label
+        self.list_box = self.ui.list_box
+        self.list_layout = self.ui.list_layout
+        self.member_scroll = self.ui.member_scroll
+        self.page_label = self.ui.page_label
+        self.prev_button = self.ui.prev_button
+        self.next_button = self.ui.next_button
+        self.action_button = self.ui.action_button
+        self.grade_table = self.ui.grade_table
+        self.grade_save_button = self.ui.grade_save_button
+        self.content_layout = self.ui.content_layout  # 레이아웃 참조 확보
 
-        sidebar = QWidget()
-        sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(228)
-        side = QVBoxLayout(sidebar)
-        side.setContentsMargins(20, 18, 14, 20)
+        self.ui.logout_button.clicked.connect(self.logout)
+        for button in self.menu_buttons:
+            button.clicked.connect(
+                lambda checked, name=button.text(): self.select_menu(name)
+            )
+        self.prev_button.clicked.connect(self.previous_page)
+        self.next_button.clicked.connect(self.next_page)
+        self.action_button.clicked.connect(self.block_selected)
+        self.grade_save_button.clicked.connect(self.save_grades)
 
-        brand = QLabel("Jewel")
-        brand.setObjectName("brand")
-        side.addWidget(brand)
-        side.addSpacing(25)
-
-        self.menu_buttons = []
-        for title in ("차단", "차단 풀기", "공지", "회원등급"):
-            button = QPushButton(title)
-            button.setObjectName("menu")
-            button.setCheckable(True)
-            button.clicked.connect(lambda checked, name=title: self.select_menu(name))
-            self.menu_buttons.append(button)
-            side.addWidget(button)
-        side.addStretch()
-        outer.addWidget(sidebar)
-
-        content = QVBoxLayout()
-        content.setContentsMargins(28, 18, 28, 28)
-
-        header = QHBoxLayout()
-        header.addStretch()
-        logout_button = LogoutButton()
-        logout_button.clicked.connect(self.logout)
-        header.addWidget(logout_button)
-        content.addLayout(header)
-
-        title = QLabel("아이디 목록")
-        title.setStyleSheet("font-size:16px; font-weight:600;")
-        content.addWidget(title)
-
-        list_box = QWidget()
-        list_box.setStyleSheet("border:1px solid #222;")
-        list_layout = QVBoxLayout(list_box)
-        list_layout.setContentsMargins(16, 16, 16, 16)
-        list_layout.setSpacing(14)
-
-        # 실제 회원 목록 API 연결 전까지는 화면 구조 확인용 선택 행을 표시합니다.
-        for index in range(1, 16):
-            checkbox = QCheckBox(f"회원 {index}")
-            checkbox.setStyleSheet("border:0;")
-            list_layout.addWidget(checkbox)
-        list_layout.addStretch()
-
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(list_box)
-        scroll.setMinimumHeight(500)
-        content.addWidget(scroll)
-
-        action = QPushButton("차단하기")
-        action.setObjectName("action")
-        action.clicked.connect(self.block_selected)
-        content.addWidget(action, alignment=Qt.AlignCenter)
-        outer.addLayout(content, 1)
-
+        # 관리자 로그인 전에는 회원 목록 API를 호출하지 않습니다.
+        # 로그인 완료 후 app_window.show_admin()에서 최초 조회합니다.
         self.select_menu("차단")
 
+    # 왼쪽 메뉴에 따라 회원 목록, 공지, 등급 화면 전환
     def select_menu(self, name):
-        """왼쪽 관리자 카테고리의 선택 상태를 바꿉니다."""
         for button in self.menu_buttons:
             button.setChecked(button.text() == name)
-        print(f"관리자 메뉴 선택: {name}", flush=True)
 
-    def block_selected(self):
-        """선택된 회원 차단 API를 연결하기 전 안내 팝업을 표시합니다."""
-        QMessageBox.information(
-            self,
-            "관리자 기능",
-            "회원 차단 기능은 관리자 API 연결 후 사용할 수 있습니다.",
+        # 1. 회원등급 화면 처리
+        if name == "회원등급":
+            self.list_box.setVisible(False)
+            self.member_scroll.setVisible(False)
+            self.prev_button.setVisible(False)
+            self.next_button.setVisible(False)
+            self.page_label.setVisible(False)
+            self.action_button.setVisible(False)
+            if hasattr(self, "notice_widget"):
+                self.notice_widget.setVisible(False)
+            self.grade_table.setVisible(True)
+            self.grade_save_button.setVisible(True)
+            self.title_label.setVisible(True)
+            self.title_label.setText("회원등급")
+            self.load_grades()
+            return
+
+        # 2. 공지 화면 처리
+        if name == "공지":
+            self.list_box.setVisible(False)
+            self.member_scroll.setVisible(False)
+            self.prev_button.setVisible(False)
+            self.next_button.setVisible(False)
+            self.page_label.setVisible(False)
+            self.action_button.setVisible(False)
+            self.grade_table.setVisible(False)
+            self.grade_save_button.setVisible(False)
+            self.title_label.setVisible(False)  # 공지 위젯 내부에 타이틀이 있으므로 숨김
+
+            if not hasattr(self, "notice_widget"):
+                self.notice_widget = AdminNoticeContentWidget(session=self.session, parent=self)
+                self.content_layout.addWidget(self.notice_widget)
+                self.content_layout.setStretch(self.content_layout.indexOf(self.notice_widget), 1)
+            
+            self.notice_widget.setMinimumSize(400, 300)
+            self.notice_widget.setVisible(True)
+            return
+
+        # 3. 차단 / 차단 풀기 화면 처리
+        if hasattr(self, "notice_widget"):
+            self.notice_widget.setVisible(False)
+        self.grade_table.setVisible(False)
+        self.grade_save_button.setVisible(False)
+        self.title_label.setVisible(True)
+
+        self.list_box.setVisible(True)
+        self.member_scroll.setVisible(True)
+        self.prev_button.setVisible(True)
+        self.next_button.setVisible(True)
+        self.page_label.setVisible(True)
+        self.action_button.setVisible(True)
+
+        if name not in ("차단", "차단 풀기"):
+            return
+        self.mode = "unban" if name == "차단 풀기" else "ban"
+        self.current_page = 1
+        self.title_label.setText(
+            "차단한 아이디 목록" if self.mode == "unban" else "아이디 목록"
         )
+        self.action_button.setText(
+            "차단 풀기" if self.mode == "unban" else "차단하기"
+        )
+        self.load_members()
+
+    # 페이지 전환 전 기존 체크박스 제거
+    def clear_rows(self):
+        self.member_checks.clear()
+        while self.list_layout.count():
+            item = self.list_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+    # 차단 상태에 맞는 회원 목록 API 조회
+    def load_members(self):
+        if not self.session.user_id:
+            self.render_members([], 1)
+            return
+        try:
+            response = requests.get(
+                f"{SERVER_URL}/api/admin/users",
+                params={
+                    "admin_user_id": self.session.user_id,
+                    "page": self.current_page,
+                    "page_size": self.PAGE_SIZE,
+                    "banned": self.mode == "unban",
+                },
+                timeout=10,
+            )
+            if not response.ok:
+                QMessageBox.warning(
+                    self, "조회 실패",
+                    str(response.json().get("detail", "회원 목록을 불러올 수 없습니다.")),
+                )
+                return
+            data = response.json()
+            self.total_pages = max(1, int(data.get("total_pages", 1)))
+            self.render_members(data.get("users", []), self.current_page)
+        except requests.RequestException as error:
+            # 실제 요청 주소와 오류를 함께 표시해 원인(IP/포트/경로)을 확인합니다.
+            QMessageBox.warning(
+                self,
+                "연결 오류",
+                f"서버에 연결할 수 없습니다.\n{SERVER_URL}/api/admin/users\n{error}",
+            )
+
+    # 현재 페이지 회원을 체크박스로 구성
+    def render_members(self, members, page):
+        self.clear_rows()
+        for member in members:
+            user_id = int(member["user_id"])
+            label = f"{member.get('email', '')} ({member.get('name', '')})"
+            if member.get("is_banned"):
+                label += " [차단됨]"
+            checkbox = QCheckBox(label)
+            checkbox.setStyleSheet("border:0;")
+            self.list_layout.addWidget(checkbox)
+            self.member_checks.append((user_id, checkbox))
+        self.list_layout.addStretch()
+        self.current_page = page
+        self.page_label.setText(f"{page} / {self.total_pages}")
+        self.prev_button.setEnabled(page > 1)
+        self.next_button.setEnabled(page < self.total_pages)
+
+    # 이전 회원 목록 페이지로 이동
+    def previous_page(self):
+        if self.current_page > 1:
+            self.current_page -= 1
+            self.load_members()
+
+    # 다음 회원 목록 페이지로 이동
+    def next_page(self):
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+            self.load_members()
+
+    # 선택 회원의 차단 또는 차단 해제 요청
+    def block_selected(self):
+        selected = [
+            user_id for user_id, checkbox in self.member_checks
+            if checkbox.isChecked()
+        ]
+        if not selected:
+            QMessageBox.warning(self, "선택 필요", "차단할 아이디를 선택해주세요.")
+            return
+        action_name = "차단 해제" if self.mode == "unban" else "차단"
+        if QMessageBox.question(
+            self, f"{action_name} 확인",
+            f"선택한 아이디를 {action_name}하시겠습니까?",
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            endpoint = "unban" if self.mode == "unban" else "ban"
+            response = requests.post(
+                f"{SERVER_URL}/api/admin/users/{endpoint}",
+                json={"admin_user_id": self.session.user_id, "user_ids": selected},
+                timeout=10,
+            )
+            if not response.ok:
+                QMessageBox.warning(
+                    self, f"{action_name} 실패",
+                    str(response.json().get("detail", f"{action_name}에 실패했습니다.")),
+                )
+                return
+            QMessageBox.information(
+                self, f"{action_name} 완료",
+                f"선택한 아이디를 {action_name}했습니다.",
+            )
+            self.load_members()
+        except requests.RequestException:
+            QMessageBox.warning(self, "연결 오류", "서버에 연결할 수 없습니다.")
+
+    # 회원별 현재 등급 목록 API 조회
+    def load_grades(self):
+        if not self.session.user_id:
+            return
+        try:
+            response = requests.get(
+                f"{SERVER_URL}/api/admin/grades",
+                params={"admin_user_id": self.session.user_id},
+                timeout=10,
+            )
+            if not response.ok:
+                QMessageBox.warning(
+                    self, "조회 실패",
+                    str(response.json().get("detail", "회원등급을 불러올 수 없습니다.")),
+                )
+                return
+            users = response.json().get("users", [])
+            self.grade_table.setRowCount(len(users))
+            self.grade_rows = []
+            grades = ("일반", "비즈니스", "VIP", "VVIP")
+            for row, member in enumerate(users):
+                self.grade_table.setItem(
+                    row, 0, QTableWidgetItem(str(member.get("name", "")))
+                )
+                self.grade_table.setItem(
+                    row, 1, QTableWidgetItem(str(member.get("email", "")))
+                )
+                self.grade_table.setItem(
+                    row, 2, QTableWidgetItem(str(member.get("grade", "일반")))
+                )
+                combo = QComboBox()
+                combo.addItems(grades)
+                combo.setCurrentText(str(member.get("grade", "일반")))
+                combo.activated.connect(
+                    lambda _index, box=combo: box.hidePopup()
+                )
+                self.grade_table.setCellWidget(row, 3, combo)
+                self.grade_rows.append(
+                    (int(member["user_id"]), combo, str(member.get("grade", "일반")))
+                )
+            apply_admin_table_style(self.grade_table)
+        except requests.RequestException:
+            QMessageBox.warning(self, "연결 오류", "서버에 연결할 수 없습니다.")
+
+    # 변경된 등급만 서버에 저장
+    def save_grades(self):
+        changed = [
+            (user_id, combo.currentText())
+            for user_id, combo, old_grade in self.grade_rows
+            if combo.currentText() != old_grade
+        ]
+        if not changed:
+            QMessageBox.information(self, "등급 변경", "변경된 등급이 없습니다.")
+            return
+        try:
+            for user_id, grade in changed:
+                response = requests.put(
+                    f"{SERVER_URL}/api/admin/users/grade",
+                    json={
+                        "admin_user_id": self.session.user_id,
+                        "user_id": user_id,
+                        "grade": grade,
+                    },
+                    timeout=10,
+                )
+                if not response.ok:
+                    QMessageBox.warning(
+                        self, "변경 실패",
+                        str(response.json().get("detail", "등급을 변경할 수 없습니다.")),
+                    )
+                    return
+            QMessageBox.information(self, "변경 완료", "회원 등급을 변경했습니다.")
+            self.load_grades()
+        except requests.RequestException:
+            QMessageBox.warning(self, "연결 오류", "서버에 연결할 수 없습니다.")
+
+
+def apply_admin_table_style(table):
+    """회원등급 테이블의 고정 스타일 적용."""
+    from PySide6.QtWidgets import QAbstractItemView, QHeaderView
+
+    table.horizontalHeader().setStretchLastSection(False)
+    table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+    table.setColumnWidth(0, 220)
+    table.setColumnWidth(1, 380)
+    table.setColumnWidth(2, 180)
+    table.setColumnWidth(3, 180)
+    table.verticalHeader().setVisible(True)
+    table.verticalHeader().setFixedWidth(28)
+    table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+    table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+    table.setAlternatingRowColors(False)
+    table.setStyleSheet(
+        "QTableWidget { border:1px solid #222; gridline-color:#c6c6c6;"
+        " color:#111; background:white; }"
+        "QTableWidget::item { color:#111; padding:4px; }"
+        
+        # [추가] 콤보박스 마우스 오버(hover) 및 드롭다운 시 글씨가 하얗게 사라지는 문제 해결 스타일
+        "QComboBox { background: white; color: #111; border: 1px solid #c6c6c6; padding: 2px; }"
+        "QComboBox:hover { background: #e3f2fd; color: #111; }"
+        "QComboBox::drop-down { subcontrol-origin: padding; subcontrol-position: top right; width: 20px; border-left: 1px solid #c6c6c6; }"
+        "QComboBox QAbstractItemView { background: white; color: #111; selection-background-color: #48aff0; selection-color: white; }"
+        
+        "QHeaderView::section { background:#8fd0f7; color:#111;"
+        " font-weight:600; border:1px solid #6ca8c7; padding:6px; }"
+    )
+    table.verticalHeader().setStyleSheet(
+        "QHeaderView::section { background:white; color:#111;"
+        " border:1px solid #c6c6c6; }"
+    )
+    table.horizontalHeader().setStyleSheet(
+        "QHeaderView::section { background:#8fd0f7; color:#111;"
+        " font-weight:600; border:1px solid #6ca8c7; padding:6px; }"
+    )
 
 
 __all__ = ["AdminPage"]
-
-
-# 관리자 화면만 단독으로 UI를 확인할 때 사용하는 테스트 진입점입니다.
-if __name__ == "__main__":
-    import sys
-    from PySide6.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-    window = AdminPage(lambda: window.close())
-    window.setWindowTitle("JEWEL Cloud - 관리자")
-    window.resize(1280, 800)
-    window.show()
-    sys.exit(app.exec())

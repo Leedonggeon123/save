@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from typing import Any
 
+# 생성자 안 적고 클래스 생성
 @dataclass
 class UserSession:
-    """로그인 상태를 화면 사이에서 공유합니다. 비밀번호는 저장하지 않습니다."""
+    """로그인 상태를 화면 사이에서 공유. 비밀번호는 저장X"""
     user_id: int | None = None
     email: str = ""
     name: str = ""
@@ -12,10 +13,12 @@ class UserSession:
     is_admin: bool = False
     access_token: str = ""
 
+    # 함수를 변수처럼 편하게 쓸 수 있음
     @property
     def is_authenticated(self) -> bool:
         return bool(self.access_token)
 
+    # 서버에서 반환 받은 로그인한 사용자 정보 저장
     def update_from_login(self, data: dict[str, Any], email: str = "") -> None:
         self.access_token = str(data.get("token") or data.get("access_token") or "")
         self.user_id = data.get("user_id")

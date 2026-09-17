@@ -8,16 +8,21 @@ from pathlib import Path
 
 
 class File_Setting_Page:
-    def __init__(self, ui, user_id, file_page):                                 
+    def __init__(self, ui, user_id, file_page, show_settings):                                 
         self.ui = ui
         self.user_id = user_id
         self.file_page = file_page                                                  # main에서 전달받은 file_page 객체를 저장 (다운로드 경로받기 위해 사용)
+        self.show_settings = show_settings                                           # 취소 버튼 눌렀을때
+
         self.file_size_limit = 0
         self.receive_path = Path("/mnt/c/Users/AIOT/Desktop")                       # 선택 안했을때 기본경로
         
+        
+        self.ui.cancel_btn.clicked.connect(self.show_settings)
         self.ui.receive_path_btn.clicked.connect(self.set_receive_path)                 # 받는 위치 설정 버튼
         self.ui.file_size_limit_btn.clicked.connect(self.set_file_size_limit)           # 파일 크기 제한 버튼
-    
+        self.ui.cloud_storage_btn.clicked.connect(self.check_cloud_storage)
+        self.ui.folder_manage_btn.clicked.connect(self.folder_manage)                               # 폴더 관리 버튼
     
     
     def set_receive_path(self):
@@ -139,10 +144,166 @@ class File_Setting_Page:
 
         print("파일 크기 제한 DB 저장 완료:", size, "MB")
                 
+    
+    
+    
+    
+    def check_cloud_storage(self):                          # 클라우드 용량 확인 버튼 
+        try:
+            response = requests.get(
+                f"{SERVER_URL}/files/usage/{self.user_id}",
+                timeout=15
+            )
+        except requests.RequestException as error:                      # 서버와 연결되지 않았을 경우 오류 메세지 표시
+            QMessageBox.warning(
+                self.ui,
+                "연결 오류",
+                f"서버에 연결할 수 없습니다.\n{error}"
+            )
+            return
+
+        if response.status_code != 200:                         # 서버에서 정상적인 응답을 받지 못했을 경우 오류 메세지 표시
+            QMessageBox.warning(
+                self.ui,
+                "조회 실패",
+                response.text
+            )
+            return
+
+        data = response.json()                                          # 서버에서 받은 json 데이터에서 현재 사용량(mb)을 가져옴
+        used_mb = data["used_mb"]
+        available_mb = data["available_mb"]                         # 서버에서 현재 사용 가능 공간 받음
+        QMessageBox.information(                            # 현재 사용 중인 클라우드 용량을 사용자에게 표시
+            self.ui,
+            "클라우드 용량",
+            f"현재 사용 중인 용량: {used_mb:.2f} MB\n"
+            f"사용 가능 용량: {available_mb:.2f} MB"
+        )        
+            
             
             
 
+    def folder_manage(self):                                    # 폴더 관리 버튼
+            # 폴더 관리에서 어떤 작업을 할지 선택
+        action, ok = QInputDialog.getItem(
+            self.ui,
+            "폴더 관리",
+            "작업을 선택하세요:",
+            ["폴더 생성", "폴더 삭제"],
+            0,
+            False
+        )
 
+        # 취소를 누른 경우 종료
+        if not ok:
+            return
+
+        # 폴더 생성 선택
+        if action == "폴더 생성":
+            self.create_folder()
+
+        # 폴더 삭제 선택
+        elif action == "폴더 삭제":
+            self.delete_folder()
+            
+            
+            
+    def create_folder(self):                                            # 폴더관리에서 폴더 생성로직
+        # 사용자에게 폴더 이름을 입력받음
+        folder_name, ok = QInputDialog.getText(
+            self.ui,
+            "폴더 생성",
+            "생성할 폴더 이름을 입력하세요:"
+        )
+
+        # 취소했거나 이름을 입력하지 않은 경우 종료
+        if not ok or not folder_name.strip():
+            return
+
+        try:
+            # 서버에 폴더 생성 요청
+            response = requests.post(
+                f"{SERVER_URL}/files/folder",
+                params={
+                    "user_id": self.user_id,
+                    "folder_name": folder_name
+                },
+                timeout=15
+            )
+
+        except requests.RequestException as error:
+            QMessageBox.warning(
+                self.ui,
+                "연결 오류",
+                f"서버에 연결할 수 없습니다.\n{error}"
+            )
+            return
+
+        # 폴더 생성 실패
+        if response.status_code != 200:
+            QMessageBox.warning(
+                self.ui,
+                "폴더 생성 실패",
+                response.text
+            )
+            return
+
+        # 폴더 생성 성공
+        QMessageBox.information(
+            self.ui,
+            "폴더 생성",
+            f"'{folder_name}' 폴더가 생성되었습니다."
+        )
+        
+        
+        
+        
+    def delete_folder(self):                                    # 폴더 관리에서 삭제 로직
+        # 사용자에게 삭제할 폴더 이름을 입력받음
+        folder_name, ok = QInputDialog.getText(
+            self.ui,
+            "폴더 삭제",
+            "삭제할 폴더 이름을 입력하세요:"
+        )
+
+        # 취소했거나 폴더 이름을 입력하지 않은 경우 종료
+        if not ok or not folder_name.strip():
+            return
+
+        try:
+            # 서버에 폴더 삭제 요청
+            response = requests.delete(
+                f"{SERVER_URL}/files/folder",
+                params={
+                    "user_id": self.user_id,
+                    "folder_name": folder_name
+                },
+                timeout=15
+            )
+
+        except requests.RequestException as error:
+            QMessageBox.warning(
+                self.ui,
+                "연결 오류",
+                f"서버에 연결할 수 없습니다.\n{error}"
+            )
+            return
+
+        # 서버에서 삭제에 실패한 경우
+        if response.status_code != 200:
+            QMessageBox.warning(
+                self.ui,
+                "폴더 삭제 실패",
+                response.text
+            )
+            return
+
+        # 삭제 성공
+        QMessageBox.information(
+            self.ui,
+            "폴더 삭제",
+            f"'{folder_name}' 폴더가 삭제되었습니다."
+        )
 
 
 

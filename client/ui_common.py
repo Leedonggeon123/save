@@ -1,4 +1,6 @@
-"""Shared paths and small UI helpers used by client screens."""
+"""여러 화면에서 함께 쓰는 설정과 보조 기능을 모아둔 파일
+/ 서버 주소 정의 / 루트 경로 계산
+"""
 from __future__ import annotations
 
 import os
@@ -12,7 +14,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+<<<<<<< HEAD
 SERVER_URL = os.getenv("JEWEL_SERVER_URL", "http://127.0.0.1:8000").rstrip("/")
+=======
+SERVER_URL = os.getenv("JEWEL_SERVER_URL", "http://10.10.10.107:8000").rstrip("/")
+# SERVER_URL = os.getenv("JEWEL_SERVER_URL", "http://127.0.0.1:8000").rstrip("/")
+>>>>>>> origin/main
 
 
 def logo_pixmap(path, width=72, height=72):

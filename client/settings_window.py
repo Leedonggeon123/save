@@ -6,8 +6,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QFormLayout,QHBoxLayout,QLabel,QMessageBox,QPushButton,QLineEdit,QStackedWidget,QVBoxLayout,QWidget,)
 
 from client.components.logout_button import LogoutButton
+from client.components.back_button import BackButton
 from client.components.upgrade_button import UpgradeButton
-from client.ui_common import PROJECT_ROOT, SERVER_URL, logo_pixmap
+from client.components.brand_header import BrandHeader
+from client.ui_common import SERVER_URL
 from client.session import UserSession
 
 # 설정 메뉴에서 개인·메일·파일 설정으로 이동하는 화면
@@ -26,7 +28,7 @@ class SettingsPage(QWidget):
         
         self.setStyleSheet(
             "QWidget { background: white; }"
-            "QLabel#brand { color:#0b3d63; font-size:28px; font-weight:800; }"
+            "QLabel#brand { color:#0b3d63; font-size:32px; font-weight:800; }"
             "QPushButton { background:#2379aa; color:white; border:0;"
             "border-radius:8px; font-size:16px; font-weight:600; }"
             "QPushButton#logout,QPushButton#back { background:#4295f4; }"
@@ -34,10 +36,11 @@ class SettingsPage(QWidget):
 
         # 상단 헤더, 중앙 설정 버튼, 하단 뒤로가기 버튼을 세로로 배치
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 18, 24, 24)
+        root.setContentsMargins(14, 18, 24, 20)
         root.setSpacing(0)
 
         header = QHBoxLayout()
+<<<<<<< HEAD
         icon = QLabel()
         icon_path = PROJECT_ROOT / "mail" / "mail_client" / "assets" / "jewel_cloud_logo.png"
         icon.setPixmap(logo_pixmap(icon_path))
@@ -45,6 +48,9 @@ class SettingsPage(QWidget):
         brand = QLabel("JEWEL")
         brand.setObjectName("brand")
         header.addWidget(brand)
+=======
+        header.addWidget(BrandHeader("JEWEL"))
+>>>>>>> origin/main
         header.addStretch()
         logout_button = LogoutButton()
         logout_button.clicked.connect(self.logout)
@@ -66,9 +72,7 @@ class SettingsPage(QWidget):
             menu.addWidget(button)
         root.addLayout(menu)
         root.addStretch(1)
-        back_button = QPushButton("뒤로가기")
-        back_button.setObjectName("back")
-        back_button.setFixedSize(80, 38)
+        back_button = BackButton()
         back_button.clicked.connect(self.go_back)
         root.addWidget(back_button, alignment=Qt.AlignLeft | Qt.AlignBottom)
 
@@ -106,6 +110,8 @@ class PersonalSettingsPage(QWidget):
             "QPushButton#category:checked { color:#1877f2; font-weight:700; }"
             "QPushButton#logout { background:#4295f4; color:white; border:0;"
             "border-radius:8px; font-size:14px; }"
+            "QPushButton#back { background:#4295f4; color:white; border:0;"
+            "border-radius:6px; font-size:13px; }"
             "QPushButton#upgrade { background:#176a99; color:white; border:0;"
             "border-radius:7px; padding:8px 18px; min-width:72px; min-height:32px; }"
             "QLineEdit { background:#eeeeee; border:0; border-radius:7px;"
@@ -120,8 +126,9 @@ class PersonalSettingsPage(QWidget):
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(228)
         side = QVBoxLayout(sidebar)
-        side.setContentsMargins(20, 18, 14, 20)
+        side.setContentsMargins(14, 18, 14, 20)
         side.setSpacing(8)
+<<<<<<< HEAD
         logo_box = QWidget()
         logo_box.setFixedHeight(80)
         logo_box.setStyleSheet("background:transparent;")
@@ -135,6 +142,9 @@ class PersonalSettingsPage(QWidget):
         brand.setObjectName("brand")
         logo_row.addWidget(brand)
         side.addWidget(logo_box)
+=======
+        side.addWidget(BrandHeader("JEWEL"))
+>>>>>>> origin/main
         side.addSpacing(18)
 
         self.category_buttons = []
@@ -150,17 +160,18 @@ class PersonalSettingsPage(QWidget):
             self.category_buttons.append(button)
             side.addWidget(button)
         side.addStretch()
+        back_button = BackButton()
+        back_button.clicked.connect(self.go_back)
+        side.addWidget(back_button, alignment=Qt.AlignLeft)
         # side는 레이아웃이므로, 실제 위젯인 sidebar를 바깥 레이아웃에 추가
         outer.addWidget(sidebar)
 
         content = QVBoxLayout()
-        content.setContentsMargins(28, 18, 28, 28)
+        content.setContentsMargins(28, 18, 24, 28)
         content.setSpacing(0)
         header = QHBoxLayout()
         header.addStretch()
-        logout_button = LogoutButton()
-        logout_button.clicked.connect(self.logout)
-        header.addWidget(logout_button)
+        # 개인설정 상세 화면에서는 사이드바의 뒤로가기로 이동합니다.
         content.addLayout(header)
 
         # 세 가지 개인설정 콘텐츠를 하나씩 보여주는 스택 위젯
@@ -183,12 +194,14 @@ class PersonalSettingsPage(QWidget):
     def create_service_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(16, 8, 16, 0)
+        layout.setContentsMargins(16, 0, 16, 0)
+        layout.setAlignment(Qt.AlignCenter)
         title = QLabel("내 등급: 일반")
         title.setAlignment(Qt.AlignCenter)
+        title.setContentsMargins(0, 40, 0, 0)
         title.setStyleSheet("font-size:24px; font-weight:700;")
         layout.addWidget(title)
-        layout.addSpacing(72)
+        layout.addSpacing(32)
 
         cards = QHBoxLayout()
         cards.setSpacing(24)
@@ -246,7 +259,6 @@ class PersonalSettingsPage(QWidget):
             card.addWidget(action_area)
             cards.addWidget(panel)
         layout.addLayout(cards)
-        layout.addStretch()
         return page
 
     # 기본 발신 이메일 입력 UI를 만드는 함수
@@ -260,7 +272,9 @@ class PersonalSettingsPage(QWidget):
         row = QHBoxLayout(row_box)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(4)
-        row.addWidget(QLabel("보내는 사람"))
+        sender_label = QLabel("보내는 사람")
+        sender_label.setStyleSheet("font-size:17px;")
+        row.addWidget(sender_label)
         self.sender_email_input = QLineEdit("jewel@gmail.com")
         self.sender_email_input.setFixedWidth(430)
         self.sender_email_input.setFixedHeight(48)
@@ -317,7 +331,7 @@ class PersonalSettingsPage(QWidget):
         layout.addSpacing(54)
 
         form_box = QWidget()
-        form_box.setMaximumWidth(600)
+        form_box.setFixedWidth(620)
         form = QFormLayout()
         form.setHorizontalSpacing(18)
         form.setVerticalSpacing(12)
@@ -340,10 +354,15 @@ class PersonalSettingsPage(QWidget):
         for field in (name_input, email_input, password_input, password_confirm_input):
             field.setFixedHeight(48)
             field.setFixedWidth(500)
-        form.addRow("이름", name_input)
-        form.addRow("구글 이메일", email_input)
-        form.addRow("비밀번호", password_input)
-        form.addRow("비밀번호 확인", password_confirm_input)
+        for label_text, field in (
+            ("이름", name_input),
+            ("구글 이메일", email_input),
+            ("비밀번호", password_input),
+            ("비밀번호 확인", password_confirm_input),
+        ):
+            label = QLabel(label_text)
+            label.setStyleSheet("font-size:17px;")
+            form.addRow(label, field)
         form_box.setLayout(form)
         layout.addWidget(form_box, alignment=Qt.AlignHCenter)
         layout.addStretch()
@@ -365,8 +384,8 @@ class PersonalSettingsPage(QWidget):
         if bool(password) != bool(password_confirm):
             QMessageBox.warning(self, "입력 오류", "비밀번호와 비밀번호 확인을 모두 입력해주세요.")
             return
-        if password and len(password) < 10:
-            QMessageBox.warning(self, "입력 오류", "비밀번호는 10자리 이상이어야 합니다.")
+        if password and (len(password) < 10 or len(password) > 20):
+            QMessageBox.warning(self, "입력 오류", "비밀번호는 10자 이상 20자 이하이어야 합니다.")
             return
         if password and password != password_confirm:
             QMessageBox.warning(self, "입력 오류", "비밀번호가 서로 일치하지 않습니다.")
@@ -418,5 +437,5 @@ class PersonalSettingsPage(QWidget):
     def show_upgrade_message(self):
         QMessageBox.information(self, "등급 업그레이드", "변경 불가\n관리자에게 문의하세요.")
 
-
+# 아래 두 클래스만 넘김 / 코드 충돌 방지
 __all__ = ["SettingsPage", "PersonalSettingsPage"]
