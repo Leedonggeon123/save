@@ -15,7 +15,7 @@ from client.session import UserSession
 from PySide6.QtUiTools import QUiLoader
 from client.file_client import FilePage                                                     # 파일 파트 추가
 from client.file_settings import File_Setting_Page         
-from client.ui_common import PROJECT_ROOT
+from client.ui_common import PROJECT_ROOT, logo_pixmap
 
 
 class JewelClient(QStackedWidget):
@@ -70,8 +70,13 @@ class JewelClient(QStackedWidget):
         # 개인설정 페이지 초기화
         self.personal_page.select_category(0)
         self.session.clear()  
-        # 로그인 페이지
-        self.setCurrentWidget(self.login_page)  
+          
+          
+        # 이전 로그인 사용자의 파일 페이지 제거
+        if hasattr(self, "file_page"):
+            del self.file_page
+
+        self.setCurrentWidget(self.login_page) 
 
     def show_admin(self, access_token=None):
         """관리자 계정 로그인 성공 시 관리자 화면으로 이동합니다."""
@@ -122,7 +127,11 @@ class JewelClient(QStackedWidget):
             )
 
             self.file_ui = loader.load(str(file_ui_path))
-
+            
+                                
+            
+            
+            
             self.file_page = FilePage(
                 self.file_ui,
                 self.session.user_id,
@@ -131,6 +140,13 @@ class JewelClient(QStackedWidget):
                 self.show_dashboard
             )
 
+        self.file_ui.cloud_img.setPixmap(
+            logo_pixmap(
+                PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png",
+                80,
+                80
+            )
+        )
         # 기존 FilePage를 다시 사용
         self.file_page.load_file_list()
         self.file_page.load_storage_usage()             # 클라우드 용량 확인
@@ -157,6 +173,14 @@ class JewelClient(QStackedWidget):
             str(settings_ui_path)
         )
 
+        
+        self.file_settings_ui.cloud_img.setPixmap(
+            logo_pixmap(
+                PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png",
+                80,
+                80
+            )
+        )
         # 파일 화면이 아직 만들어지지 않았다면
         # 설정 기능이 사용할 FilePage를 먼저 생성
         if not hasattr(self, "file_page"):
@@ -168,6 +192,8 @@ class JewelClient(QStackedWidget):
             )
 
             self.file_ui = loader.load(str(file_ui_path))
+            
+            
 
             user_id = self.session.user_id           # 로그인한 아이디
             grade = self.session.grade

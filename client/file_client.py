@@ -1,6 +1,7 @@
 import requests
 import sys
 
+
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidgetItem, QPushButton, QHeaderView, QMessageBox
 from PySide6.QtCore import Qt
 from PySide6.QtUiTools import QUiLoader
@@ -245,7 +246,8 @@ class FilePage:
         table.setRowCount(0)
 
         for file_info in file_list:
-
+            if file_info["type"] == "folder":               # 서버 폴더생성된걸 보이지않게 
+                continue
             row = table.rowCount()
             table.insertRow(row)
 
