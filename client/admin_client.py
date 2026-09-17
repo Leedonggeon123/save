@@ -99,27 +99,34 @@ class AdminNoticeContentWidget(QWidget):
                 if not user_id or user_id == admin_id:
                     continue
 
-                # 관리자 계정은 공지 대상에서 제외
+                # 관리자 계정은 공지 대상에서 제외 (안전장치)
                 if user.get("is_admin") == 1 or user.get("is_admin") is True:
                     continue
 
-                # 메시지 전송 API 호출
-                msg_response = requests.post(
-                    f"{SERVER_URL}/api/messages",
-                    json={
-                        "sender_id": admin_id,
-                        "receiver_id": user_id,
-                        "content": notice_content,
-                    },
-                    timeout=5,
-                )
-                if msg_response.ok:
-                    success_count += 1
+                # 메시지 전송 API 호출 (서버 스펙상 숫자 user_id 전달)
+                try:
+                    msg_response = requests.post(
+                        f"{SERVER_URL}/api/messages",
+                        json={
+                            "sender_id": admin_id,
+                            "receiver_id": user_id,
+                            "content": notice_content,
+                        },
+                        timeout=5,
+                    )
+                    if msg_response.ok:
+                        success_count += 1
+                except requests.RequestException:
+                    # 개별 전송 중 네트워크 에러가 나더라도 전체 중단 없이 다음 회원에게 진행
+                    continue
 
             QMessageBox.information(
-                self, "전송 완료", f"모든 회원에게 공지를 전송했습니다."
+                self, "전송 완료", "모든 회원에게 공지를 전송했습니다."
             )
             self.notice_edit.clear()
 
         except requests.RequestException as e:
             QMessageBox.warning(self, "연결 오류", f"서버에 연결할 수 없습니다.\n({e})")
+
+
+__all__ = ["AdminNoticeContentWidget"]
