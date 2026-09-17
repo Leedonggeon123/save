@@ -117,7 +117,7 @@ class AdminNoticeContentWidget(QWidget):
                     success_count += 1
 
             QMessageBox.information(
-                self, "전송 완료", f"총 {success_count}명의 회원에게 공지를 전송했습니다."
+                self, "전송 완료", f"모든 회원에게 공지를 전송했습니다."
             )
             self.notice_edit.clear()
 
