@@ -32,7 +32,7 @@ class DashboardPage(QWidget):
 
         # 로고, 중앙메뉴 배치
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 18, 24, 24)
+        root.setContentsMargins(14, 18, 24, 24)
         root.setSpacing(0)
 
         # 로고, 서비스 이름

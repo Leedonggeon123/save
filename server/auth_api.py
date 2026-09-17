@@ -26,8 +26,6 @@ class EmailRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=50)
-    # 전화번호는 더 이상 회원가입 입력값으로 받지 않습니다.
-    phone: str = ""
     password: str = Field(min_length=10, max_length=128)
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
@@ -144,7 +142,7 @@ def signup(request: SignupRequest):
             c.execute("UPDATE email_verification SET attempts=attempts+1 WHERE email=%s", (email,))
             raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
         try:
-            c.execute("INSERT INTO `USER`(email,password_hash,name,phone) VALUES(%s,%s,%s,%s)", (email, hash_password(request.password), request.name, ""))
+            c.execute("INSERT INTO `USER`(email,password_hash,name) VALUES(%s,%s,%s)", (email, hash_password(request.password), request.name))
         except pymysql.IntegrityError as exc:
             raise HTTPException(409, "이미 가입된 이메일입니다.") from exc
         user_id = c.lastrowid
