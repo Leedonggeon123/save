@@ -188,8 +188,8 @@ class SignupWindow(QWidget):
             QMessageBox.warning(self, "입력 오류", "이름을 입력해주세요."); return
         if password != self.ui.password_confirm_input.text():
             QMessageBox.warning(self, "입력 오류", "비밀번호가 일치하지 않습니다."); return
-        if len(password) < 10:
-            QMessageBox.warning(self, "입력 오류", "비밀번호는 10자 이상 입력해주세요."); return
+        if len(password) < 10 or len(password) > 20:
+            QMessageBox.warning(self, "입력 오류", "비밀번호는 10자 이상 20자 이하 입력해주세요."); return
         # 비밀번호에 한글이 들어갔는지 검사
         if not all("!" <= character <= "~" for character in password):
             QMessageBox.warning(self, "입력 오류", "비밀번호에는 한글을 사용할 수 없습니다."); return
