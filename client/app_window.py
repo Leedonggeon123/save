@@ -128,9 +128,8 @@ class JewelClient(QStackedWidget):
 
             self.file_ui = loader.load(str(file_ui_path))
             
-                                
             
-            
+                   
             
             self.file_page = FilePage(
                 self.file_ui,

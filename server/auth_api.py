@@ -234,7 +234,7 @@ def login(request: LoginRequest):
     with db() as c:
         c.execute(
             """
-            SELECT user_id, email, password_hash, name, is_banned, is_admin
+            SELECT user_id, email, password_hash, name, is_banned, is_admin, grade, file_limit
             FROM `USER`
             WHERE email=%s
             """,
@@ -270,7 +270,9 @@ def login(request: LoginRequest):
         "access_token": token,
         "user_id": user["user_id"],
         "name": user["name"],
-        "is_admin": bool(user.get("is_admin", 0))
+        "is_admin": bool(user.get("is_admin", 0)),
+        "grade": user["grade"],
+        "file_limit": user["file_limit"]
     }
     
     

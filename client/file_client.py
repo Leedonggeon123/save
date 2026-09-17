@@ -19,11 +19,10 @@ class FilePage:
         self.grade = grade                                                                                   # 현재 로그인한 사용자의 등급 저장
         self.file_limit = file_limit                                                                        # 사용자에게 별도로 설정된 파일 제한값 저장
         self.show_dashboard = show_dashboard                                                                    # 취소 버튼 클릭시
-        
         self.ui.cancel_btn.clicked.connect(self.show_dashboard)
         grade_limit = {                                                                     # 등급 기본 클라우드 용량 단위는 Byte 이므로 MB에 1024 * 1024를 곱함
         "일반": 100 * 1024 * 1024,
-        "비지니스": 200 * 1024 * 1024,
+        "비즈니스": 200 * 1024 * 1024,
         "VIP": 500 * 1024 * 1024,
         "VVIP": 1024 * 1024 * 1024
         }

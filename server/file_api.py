@@ -316,7 +316,7 @@ def get_file_usage(user_id: int):
      # 사용자 등급에 따른 전체 클라우드 용량
     grade_limits = {
         "일반": 100,
-        "비지니스": 200,
+        "비즈니스": 200,
         "VIP": 500,
         "VVIP": 1024
     }
