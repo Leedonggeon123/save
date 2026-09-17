@@ -6,7 +6,7 @@ import requests
 
 from PySide6.QtCore import Qt  
 from PySide6.QtGui import QFont, QPalette  
-from PySide6.QtWidgets import QLabel, QMessageBox, QWidget  
+from PySide6.QtWidgets import QDialog, QLabel, QLineEdit, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from source.designer_ui.login_design import Ui_LoginPage  # Designer에서 생성된 로그인 UI
 from client.sign import SignupWindow  # 회원가입 화면을 재사용
@@ -55,9 +55,66 @@ class LoginPage(QWidget):
 
         # Designer 버튼 클릭 시 각각의 동작 함수를 연결
         # 회원가입 버튼을 회원가입 페이지로 연결
-        self.ui.signup_button.clicked.connect(self.show_signup)  
+        self.ui.signup_button.clicked.connect(self.show_signup)
+        self.ui.find_id_button.clicked.connect(self.show_find_id)
         # 로그인 버튼을 login() 함수로 연결
         self.ui.login_button.clicked.connect(self.login) 
+
+    def show_find_id(self):
+        """이름과 전화번호로 가입 이메일을 찾는 팝업을 표시합니다."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("아이디 찾기")
+        dialog.setFixedSize(800, 600)
+        dialog.setStyleSheet(
+            "QDialog { background:white; }"
+            "QLabel { color:#0b3d63; }"
+            "QLineEdit { background:#eeeeee; color:#111; border:0; border-radius:7px; padding:6px 14px; font-size:16px; }"
+            "QPushButton { background:#2379aa; color:white; border:0; border-radius:7px; padding:12px; font-size:16px; }"
+        )
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(42, 32, 42, 32)
+        layout.setSpacing(14)
+        title = QLabel("아이디 찾기")
+        title.setStyleSheet("font-size:26px; font-weight:800;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        guide = QLabel("가입할 때 입력한 이름과 전화번호를 입력해주세요.")
+        guide.setAlignment(Qt.AlignCenter)
+        layout.addWidget(guide)
+        name_input = QLineEdit()
+        name_input.setPlaceholderText("이름")
+        phone_input = QLineEdit()
+        phone_input.setPlaceholderText("전화번호 (010-1234-5678)")
+        name_input.setFixedHeight(33)
+        phone_input.setFixedHeight(33)
+        layout.addWidget(name_input)
+        layout.addWidget(phone_input)
+        find_button = QPushButton("아이디 찾기")
+        layout.addWidget(find_button)
+
+        def find_id():
+            name = name_input.text().strip()
+            phone = phone_input.text().strip()
+            if not name or not phone:
+                QMessageBox.warning(dialog, "입력 오류", "이름과 전화번호를 입력해주세요.")
+                return
+            if len(phone) != 13 or phone[:3] != "010" or phone[3] != "-" or phone[8] != "-" or not phone.replace("-", "").isdigit():
+                QMessageBox.warning(dialog, "입력 오류", "전화번호는 010-1234-5678 형식으로 입력해주세요.")
+                return
+            try:
+                response = requests.post(
+                    f"{SERVER_URL}/api/find-id", json={"name": name, "phone": phone}, timeout=10
+                )
+                if response.ok:
+                    QMessageBox.information(dialog, "아이디 확인", f"가입 아이디: {response.json()['email']}")
+                    dialog.accept()
+                else:
+                    QMessageBox.warning(dialog, "조회 실패", str(response.json().get("detail", "일치하는 회원 정보가 없습니다.")))
+            except requests.RequestException:
+                QMessageBox.warning(dialog, "연결 오류", "서버에 연결할 수 없습니다.")
+
+        find_button.clicked.connect(find_id)
+        dialog.exec()
 
     def login(self):
         """입력값을 검증하고 서버 로그인 API를 호출"""
