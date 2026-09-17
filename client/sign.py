@@ -30,7 +30,7 @@ class SignupWindow(QWidget):
         # 로그인 화면으로 돌아가는 버튼
         self.back_button = QPushButton("뒤로가기", self)
         # 버튼 이동
-        self.back_button.setGeometry(1125, 18, 120, 38)
+        self.back_button.setGeometry(1090, 18, 120, 38)
         self.back_button.setStyleSheet(
             "QPushButton { background:#4285f4; color:white; border:0; "
             "border-radius:6px; font-size:13px; }"
@@ -39,7 +39,7 @@ class SignupWindow(QWidget):
         self.back_button.setVisible(go_login is not None)
         # 세로 입력창 사이 간격
         self.ui.main_layout.setSpacing(14)
-        self.ui.main_layout.setContentsMargins(320, 16, 320, 20)
+        self.ui.main_layout.setContentsMargins(320, 58, 320, 20)
         # 남는 높이를 위젯 사이에 자동 분배하지 않고 아래쪽에 남김
         self.ui.main_layout.setAlignment(Qt.AlignTop)
         # 제목 영역과 입력 영역을 분리
@@ -53,7 +53,6 @@ class SignupWindow(QWidget):
         # 입력 위젯이 남는 공간을 모두 차지해 행 사이가 벌어지지 않도록 높이를 고정
         for field in (
             self.ui.name_input,
-            self.ui.phone_input,
             self.ui.email_input,
             self.ui.code_input,
             self.ui.password_input,
@@ -183,13 +182,10 @@ class SignupWindow(QWidget):
         if not self.code_is_verified:
             QMessageBox.warning(self, "확인 필요", "먼저 인증번호를 확인해주세요."); return
         name = self.ui.name_input.text().strip()
-        phone = self.ui.phone_input.text().strip()
         email = self.ui.email_input.text().strip()
         password = self.ui.password_input.text()
         if not name:
             QMessageBox.warning(self, "입력 오류", "이름을 입력해주세요."); return
-        if not phone or len(phone) != 13 or phone[:3] != "010" or phone[3] != "-" or phone[8] != "-" or not phone.replace("-", "").isdigit():
-            QMessageBox.warning(self, "입력 오류", "전화번호는 010-1234-5678 형식으로 입력해주세요."); return
         if password != self.ui.password_confirm_input.text():
             QMessageBox.warning(self, "입력 오류", "비밀번호가 일치하지 않습니다."); return
         if len(password) < 10:
@@ -202,7 +198,7 @@ class SignupWindow(QWidget):
         if not any(character.isdigit() for character in password):
             QMessageBox.warning(self, "입력 오류", "비밀번호에 숫자를 하나 이상 포함해주세요."); return
         try:
-            signup_client.signup(email, name, phone, password, self.ui.code_input.text().strip())
+            signup_client.signup(email, name, password, self.ui.code_input.text().strip())
             self.timer.stop(); QMessageBox.information(self, "가입 완료", "회원가입이 완료되었습니다.")
             if self.go_login:
                 self.go_login()

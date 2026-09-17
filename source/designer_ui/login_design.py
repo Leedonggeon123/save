@@ -24,7 +24,7 @@ class Ui_LoginPage(object):
         if not LoginPage.objectName():
             LoginPage.setObjectName(u"LoginPage")
         LoginPage.resize(1280, 800)
-        LoginPage.setStyleSheet(u"QWidget#LoginPage{background:#ffffff;} QFrame#top_bar{background:#ffffff;} QLabel#title_label{color:#0b3d63;font-size:72px;font-weight:800;} QLineEdit{background:#eeeeee;color:#858585;border:0;border-radius:7px;padding:13px 20px;font-size:22px;min-height:38px;} QPushButton{border:0;} QPushButton#login_button{background:#2379aa;color:white;border-radius:7px;font-size:30px;min-height:92px;} QPushButton#find_id_button,QPushButton#signup_button{background:transparent;color:#858585;font-size:22px;min-width:120px;}")
+        LoginPage.setStyleSheet(u"QWidget#LoginPage{background:#ffffff;} QFrame#top_bar{background:#ffffff;} QLabel#title_label{color:#0b3d63;font-size:72px;font-weight:800;} QLineEdit{background:#eeeeee;color:#858585;border:0;border-radius:7px;padding:13px 20px;font-size:22px;min-height:38px;} QPushButton{border:0;} QPushButton#login_button{background:#2379aa;color:white;border-radius:7px;font-size:30px;min-height:92px;} QPushButton#find_password_button,QPushButton#signup_button{background:transparent;color:#858585;font-size:22px;min-width:120px;}")
         self.outer_layout = QVBoxLayout(LoginPage)
         self.outer_layout.setSpacing(0)
         self.outer_layout.setObjectName(u"outer_layout")
@@ -83,10 +83,10 @@ class Ui_LoginPage(object):
 
         self.bottom_layout = QHBoxLayout()
         self.bottom_layout.setObjectName(u"bottom_layout")
-        self.find_id_button = QPushButton(LoginPage)
-        self.find_id_button.setObjectName(u"find_id_button")
+        self.find_password_button = QPushButton(LoginPage)
+        self.find_password_button.setObjectName(u"find_password_button")
 
-        self.bottom_layout.addWidget(self.find_id_button)
+        self.bottom_layout.addWidget(self.find_password_button)
 
         self.link_spacer = QSpacerItem(300, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -115,7 +115,7 @@ class Ui_LoginPage(object):
         self.email_input.setPlaceholderText(QCoreApplication.translate("LoginPage", u"\uc544\uc774\ub514", None))
         self.password_input.setPlaceholderText(QCoreApplication.translate("LoginPage", u"\ube44\ubc00\ubc88\ud638", None))
         self.login_button.setText(QCoreApplication.translate("LoginPage", u"\ub85c\uadf8\uc778", None))
-        self.find_id_button.setText(QCoreApplication.translate("LoginPage", u"\uc544\uc774\ub514\ucc3e\uae30", None))
+        self.find_password_button.setText(QCoreApplication.translate("LoginPage", u"\ube44\ubc00\ubc88\ud638 \ucc3e\uae30", None))
         self.signup_button.setText(QCoreApplication.translate("LoginPage", u"\ud68c\uc6d0\uac00\uc785", None))
     # retranslateUi
 

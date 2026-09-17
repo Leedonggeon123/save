@@ -6,8 +6,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QFormLayout,QHBoxLayout,QLabel,QMessageBox,QPushButton,QLineEdit,QStackedWidget,QVBoxLayout,QWidget,)
 
 from client.components.logout_button import LogoutButton
+from client.components.back_button import BackButton
 from client.components.upgrade_button import UpgradeButton
-from client.ui_common import PROJECT_ROOT, SERVER_URL, logo_pixmap
+from client.components.brand_header import BrandHeader
+from client.ui_common import SERVER_URL
 from client.session import UserSession
 
 # 설정 메뉴에서 개인·메일·파일 설정으로 이동하는 화면
@@ -25,7 +27,7 @@ class SettingsPage(QWidget):
         
         self.setStyleSheet(
             "QWidget { background: white; }"
-            "QLabel#brand { color:#0b3d63; font-size:28px; font-weight:800; }"
+            "QLabel#brand { color:#0b3d63; font-size:32px; font-weight:800; }"
             "QPushButton { background:#2379aa; color:white; border:0;"
             "border-radius:8px; font-size:16px; font-weight:600; }"
             "QPushButton#logout,QPushButton#back { background:#4295f4; }"
@@ -33,17 +35,11 @@ class SettingsPage(QWidget):
 
         # 상단 헤더, 중앙 설정 버튼, 하단 뒤로가기 버튼을 세로로 배치
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 18, 24, 24)
+        root.setContentsMargins(24, 18, 24, 20)
         root.setSpacing(0)
 
         header = QHBoxLayout()
-        icon = QLabel()
-        icon_path = PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png"
-        icon.setPixmap(logo_pixmap(icon_path))
-        header.addWidget(icon)
-        brand = QLabel("JEWEL")
-        brand.setObjectName("brand")
-        header.addWidget(brand)
+        header.addWidget(BrandHeader("JEWEL"))
         header.addStretch()
         logout_button = LogoutButton()
         logout_button.clicked.connect(self.logout)
@@ -65,9 +61,7 @@ class SettingsPage(QWidget):
             menu.addWidget(button)
         root.addLayout(menu)
         root.addStretch(1)
-        back_button = QPushButton("뒤로가기")
-        back_button.setObjectName("back")
-        back_button.setFixedSize(80, 38)
+        back_button = BackButton()
         back_button.clicked.connect(self.go_back)
         root.addWidget(back_button, alignment=Qt.AlignLeft | Qt.AlignBottom)
 
@@ -104,6 +98,8 @@ class PersonalSettingsPage(QWidget):
             "QPushButton#category:checked { color:#1877f2; font-weight:700; }"
             "QPushButton#logout { background:#4295f4; color:white; border:0;"
             "border-radius:8px; font-size:14px; }"
+            "QPushButton#back { background:#4295f4; color:white; border:0;"
+            "border-radius:6px; font-size:13px; }"
             "QPushButton#upgrade { background:#176a99; color:white; border:0;"
             "border-radius:7px; padding:8px 18px; min-width:72px; min-height:32px; }"
             "QLineEdit { background:#eeeeee; border:0; border-radius:7px;"
@@ -118,21 +114,9 @@ class PersonalSettingsPage(QWidget):
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(228)
         side = QVBoxLayout(sidebar)
-        side.setContentsMargins(20, 18, 14, 20)
+        side.setContentsMargins(24, 18, 14, 20)
         side.setSpacing(8)
-        logo_box = QWidget()
-        logo_box.setFixedHeight(80)
-        logo_box.setStyleSheet("background:transparent;")
-        logo_row = QHBoxLayout(logo_box)
-        logo_row.setContentsMargins(6, 4, 6, 4)
-        icon = QLabel()
-        icon_path = PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png"
-        icon.setPixmap(logo_pixmap(icon_path))
-        logo_row.addWidget(icon)
-        brand = QLabel("Jewel")
-        brand.setObjectName("brand")
-        logo_row.addWidget(brand)
-        side.addWidget(logo_box)
+        side.addWidget(BrandHeader("Jewel"))
         side.addSpacing(18)
 
         self.category_buttons = []
@@ -148,17 +132,18 @@ class PersonalSettingsPage(QWidget):
             self.category_buttons.append(button)
             side.addWidget(button)
         side.addStretch()
+        back_button = BackButton()
+        back_button.clicked.connect(self.go_back)
+        side.addWidget(back_button, alignment=Qt.AlignLeft)
         # side는 레이아웃이므로, 실제 위젯인 sidebar를 바깥 레이아웃에 추가
         outer.addWidget(sidebar)
 
         content = QVBoxLayout()
-        content.setContentsMargins(28, 18, 28, 28)
+        content.setContentsMargins(28, 18, 24, 28)
         content.setSpacing(0)
         header = QHBoxLayout()
         header.addStretch()
-        logout_button = LogoutButton()
-        logout_button.clicked.connect(self.logout)
-        header.addWidget(logout_button)
+        # 개인설정 상세 화면에서는 사이드바의 뒤로가기로 이동합니다.
         content.addLayout(header)
 
         # 세 가지 개인설정 콘텐츠를 하나씩 보여주는 스택 위젯
@@ -327,8 +312,6 @@ class PersonalSettingsPage(QWidget):
         email_input = self.email_input
         email_input.setReadOnly(True)
         email_input.setStyleSheet("color:#777; background:#eeeeee;")
-        self.phone_input = QLineEdit()
-        self.phone_input.setPlaceholderText("010-1234-5678")
         self.password_input = QLineEdit()
         password_input = self.password_input
         password_input.setEchoMode(QLineEdit.Password)
@@ -337,12 +320,11 @@ class PersonalSettingsPage(QWidget):
         password_confirm_input = self.password_confirm_input
         password_confirm_input.setEchoMode(QLineEdit.Password)
         password_confirm_input.setPlaceholderText("●●●●●●●●●●")
-        for field in (name_input, email_input, self.phone_input, password_input, password_confirm_input):
+        for field in (name_input, email_input, password_input, password_confirm_input):
             field.setFixedHeight(48)
             field.setFixedWidth(500)
         form.addRow("이름", name_input)
         form.addRow("구글 이메일", email_input)
-        form.addRow("전화번호", self.phone_input)
         form.addRow("비밀번호", password_input)
         form.addRow("비밀번호 확인", password_confirm_input)
         form_box.setLayout(form)
@@ -358,14 +340,10 @@ class PersonalSettingsPage(QWidget):
     def update_profile(self):
         """이름과 새 비밀번호를 검사한 뒤 서버에 저장"""
         name = self.name_input.text().strip()
-        phone = self.phone_input.text().strip()
         password = self.password_input.text()
         password_confirm = self.password_confirm_input.text()
         if not name:
             QMessageBox.warning(self, "입력 오류", "이름을 입력해주세요.")
-            return
-        if not phone or len(phone) != 13 or phone[:3] != "010" or phone[3] != "-" or phone[8] != "-" or not phone.replace("-", "").isdigit():
-            QMessageBox.warning(self, "입력 오류", "전화번호는 010-1234-5678 형식으로 입력해주세요.")
             return
         if bool(password) != bool(password_confirm):
             QMessageBox.warning(self, "입력 오류", "비밀번호와 비밀번호 확인을 모두 입력해주세요.")
@@ -382,7 +360,7 @@ class PersonalSettingsPage(QWidget):
         try:
             response = requests.put(
                 f"{SERVER_URL}/api/settings/profile",
-                json={"user_id": self.session.user_id, "name": name, "phone": phone, **({"password": password} if password else {})},
+                json={"user_id": self.session.user_id, "name": name, **({"password": password} if password else {})},
                 timeout=10,
             )
             if response.ok:
@@ -411,7 +389,6 @@ class PersonalSettingsPage(QWidget):
         """로그아웃 시 개인정보 입력 폼 전체를 비웁니다."""
         self.name_input.clear()
         self.email_input.clear()
-        self.phone_input.clear()
         self.reset_form()
 
     # 로그인 응답으로 받은 현재 사용자 정보를 화면에 표시
@@ -419,17 +396,6 @@ class PersonalSettingsPage(QWidget):
         """로그인한 사용자 정보를 개인정보 화면에 표시합니다."""
         self.name_input.setText(name or "")
         self.email_input.setText(email or "")
-
-    def load_phone(self):
-        if not self.session.user_id:
-            self.phone_input.clear()
-            return
-        try:
-            response = requests.get(f"{SERVER_URL}/api/settings/profile/{self.session.user_id}", timeout=10)
-            if response.ok:
-                self.phone_input.setText(response.json().get("phone", ""))
-        except requests.RequestException:
-            self.phone_input.clear()
 
     # 실제 관리자 등급 변경 전까지 안내 팝업만 표시
     def show_upgrade_message(self):
