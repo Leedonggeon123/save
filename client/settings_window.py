@@ -35,7 +35,7 @@ class SettingsPage(QWidget):
 
         # 상단 헤더, 중앙 설정 버튼, 하단 뒤로가기 버튼을 세로로 배치
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 18, 24, 20)
+        root.setContentsMargins(14, 18, 24, 20)
         root.setSpacing(0)
 
         header = QHBoxLayout()
@@ -114,9 +114,9 @@ class PersonalSettingsPage(QWidget):
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(228)
         side = QVBoxLayout(sidebar)
-        side.setContentsMargins(24, 18, 14, 20)
+        side.setContentsMargins(14, 18, 14, 20)
         side.setSpacing(8)
-        side.addWidget(BrandHeader("Jewel"))
+        side.addWidget(BrandHeader("JEWEL"))
         side.addSpacing(18)
 
         self.category_buttons = []
@@ -166,12 +166,14 @@ class PersonalSettingsPage(QWidget):
     def create_service_page(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(16, 8, 16, 0)
+        layout.setContentsMargins(16, 0, 16, 0)
+        layout.setAlignment(Qt.AlignCenter)
         title = QLabel("내 등급: 일반")
         title.setAlignment(Qt.AlignCenter)
+        title.setContentsMargins(0, 40, 0, 0)
         title.setStyleSheet("font-size:24px; font-weight:700;")
         layout.addWidget(title)
-        layout.addSpacing(72)
+        layout.addSpacing(32)
 
         cards = QHBoxLayout()
         cards.setSpacing(24)
@@ -229,7 +231,6 @@ class PersonalSettingsPage(QWidget):
             card.addWidget(action_area)
             cards.addWidget(panel)
         layout.addLayout(cards)
-        layout.addStretch()
         return page
 
     # 기본 발신 이메일 입력 UI를 만드는 함수
@@ -243,7 +244,9 @@ class PersonalSettingsPage(QWidget):
         row = QHBoxLayout(row_box)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(4)
-        row.addWidget(QLabel("보내는 사람"))
+        sender_label = QLabel("보내는 사람")
+        sender_label.setStyleSheet("font-size:17px;")
+        row.addWidget(sender_label)
         self.sender_email_input = QLineEdit("jewel@gmail.com")
         self.sender_email_input.setFixedWidth(430)
         self.sender_email_input.setFixedHeight(48)
@@ -300,7 +303,7 @@ class PersonalSettingsPage(QWidget):
         layout.addSpacing(54)
 
         form_box = QWidget()
-        form_box.setMaximumWidth(600)
+        form_box.setFixedWidth(620)
         form = QFormLayout()
         form.setHorizontalSpacing(18)
         form.setVerticalSpacing(12)
@@ -323,10 +326,15 @@ class PersonalSettingsPage(QWidget):
         for field in (name_input, email_input, password_input, password_confirm_input):
             field.setFixedHeight(48)
             field.setFixedWidth(500)
-        form.addRow("이름", name_input)
-        form.addRow("구글 이메일", email_input)
-        form.addRow("비밀번호", password_input)
-        form.addRow("비밀번호 확인", password_confirm_input)
+        for label_text, field in (
+            ("이름", name_input),
+            ("구글 이메일", email_input),
+            ("비밀번호", password_input),
+            ("비밀번호 확인", password_confirm_input),
+        ):
+            label = QLabel(label_text)
+            label.setStyleSheet("font-size:17px;")
+            form.addRow(label, field)
         form_box.setLayout(form)
         layout.addWidget(form_box, alignment=Qt.AlignHCenter)
         layout.addStretch()
