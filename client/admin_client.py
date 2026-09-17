@@ -128,5 +128,4 @@ class AdminNoticeContentWidget(QWidget):
         except requests.RequestException as e:
             QMessageBox.warning(self, "연결 오류", f"서버에 연결할 수 없습니다.\n({e})")
 
-
 __all__ = ["AdminNoticeContentWidget"]
