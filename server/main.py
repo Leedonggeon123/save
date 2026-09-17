@@ -9,5 +9,5 @@ app = FastAPI(                                          # fastapi 서버 객체 
 
 
 app.include_router(file_router)                                  # 파일 관련 api를 전체 서버에 등록
-
+# FastAPI auth_api.py 안의 API들을 인식
 app.include_router(auth_router)

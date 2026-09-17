@@ -356,8 +356,8 @@ class PersonalSettingsPage(QWidget):
         if bool(password) != bool(password_confirm):
             QMessageBox.warning(self, "입력 오류", "비밀번호와 비밀번호 확인을 모두 입력해주세요.")
             return
-        if password and len(password) < 10:
-            QMessageBox.warning(self, "입력 오류", "비밀번호는 10자리 이상이어야 합니다.")
+        if password and (len(password) < 10 or len(password) > 20):
+            QMessageBox.warning(self, "입력 오류", "비밀번호는 10자 이상 20자 이하이어야 합니다.")
             return
         if password and password != password_confirm:
             QMessageBox.warning(self, "입력 오류", "비밀번호가 서로 일치하지 않습니다.")
