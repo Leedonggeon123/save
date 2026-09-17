@@ -6,10 +6,7 @@ import threading  # 소켓 송수신을 보호할 Lock을 만들기 위해 사�
 import uuid  # 요청마다 고유한 ID를 생성하기 위해 사용한다.
 from typing import Any  # 요청 데이터와 응답의 타입 힌트에 사용한다.
 
-try:
-    from common.tcp_protocol import recv_frame, request_message, send_frame  # client 폴더 기준 실행 경로
-except ModuleNotFoundError:  # 프로젝트 루트에서 모듈로 실행할 때
-    from mail_client.common.tcp_protocol import recv_frame, request_message, send_frame  # 전체 패키지 경로
+from client.tcp_protocol import recv_frame, request_message, send_frame
 
 
 class MailTcpClient:

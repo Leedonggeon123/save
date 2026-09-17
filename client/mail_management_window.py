@@ -1,5 +1,7 @@
 from __future__ import annotations  # 타입 힌트를 지연 평가해 순환 참조와 최신 타입 문법을 안전하게 처리한다.
 
+import os
+
 import sys  # Qt 애플리케이션 인자와 종료 코드를 사용한다.
 from datetime import datetime  # 메일 시각을 화면 표시 형식으로 변환한다.
 from pathlib import Path  # UI·이미지 파일 경로를 조합한다.
@@ -12,7 +14,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QFormLayo
 try:
     from client.mail_window import ComposeDialog, MailDetailDialog, MailWorker  # 프로젝트 루트 실행 시 공통 메일 UI 클래스를 가져온다.
 except ModuleNotFoundError:  # 패키지 모듈 실행 시 대체 import 경로를 사용한다.
-    from mail_client.client.mail_window import ComposeDialog, MailDetailDialog, MailWorker  # mail_client 패키지 경로에서 가져온다.
+    from client.mail_window import ComposeDialog, MailDetailDialog, MailWorker
 
 
 class HorizontalSideTabBar(QTabBar):
@@ -63,7 +65,7 @@ class MailManagementController(QObject):
     def __init__(self):
         super().__init__()  # QObject 기본 초기화를 수행한다.
         loader = QUiLoader()  # Qt Designer UI 파일을 읽을 로더를 만든다.
-        ui_path = Path(__file__).resolve().parents[1] / "ui" / "mail_management_window.ui"  # 메일 관리 UI 경로를 계산한다.
+        ui_path = Path(__file__).resolve().parents[1] / "mail" / "mail_client" / "ui" / "mail_management_window.ui"
         self.window = loader.load(str(ui_path))  # UI 파일을 실제 창으로 로드한다.
         if self.window is None:
             raise RuntimeError(f"Could not load UI: {ui_path}")  # UI 로드 실패는 실행을 계속할 수 없으므로 명확히 중단한다.
@@ -71,7 +73,7 @@ class MailManagementController(QObject):
         # 않도록 기본 창 높이를 확보한다.
         self.window.resize(1150, 850)  # 검색·메일 20개·페이지 영역이 겹치지 않는 기본 크기를 지정한다.
         self.window.setMinimumHeight(820)  # 창을 지나치게 줄여 레이아웃이 깨지는 것을 막는다.
-        logo_path = Path(__file__).resolve().parents[1] / "assets" / "jewel_cloud_logo.png"  # 로고 이미지 경로를 계산한다.
+        logo_path = Path(__file__).resolve().parents[1] / "mail" / "mail_client" / "assets" / "jewel_cloud_logo.png"
         if logo_path.exists():
             self.window.logoLabel.setPixmap(QPixmap(str(logo_path)))  # 로고를 화면에 표시한다.
             self.window.logoLabel.setToolTip("Jewel Cloud")  # 로고에 설명 툴팁을 붙인다.
@@ -152,7 +154,7 @@ class MailManagementController(QObject):
         self.window.draftButton.clicked.connect(lambda: self.load_folder("drafts"))  # 임시 보관함 버튼을 연결한다.
         self.window.trashButton.clicked.connect(lambda: self.load_folder("trash"))  # 휴지통 버튼을 연결한다.
         self.window.refreshButton.clicked.connect(lambda: self.load_folder(self.folder))  # 현재 메일함 새로고침을 연결한다.
-        self.window.mailSettingsButton.clicked.connect(self.open_mail_settings)  # 우측 상단 설정 버튼을 연결한다.
+        self.window.mailSettingsButton.hide()  # 메일 설정은 클라우드 설정 메뉴에서만 연다.
         self.window.searchButton.clicked.connect(self.search_mails)  # 검색 버튼을 연결한다.
         self.window.clearSearchButton.clicked.connect(self.clear_search)  # 검색 초기화 버튼을 연결한다.
         self.window.searchEdit.returnPressed.connect(self.search_mails)  # 검색창 Enter 키를 검색에 연결한다.
@@ -212,7 +214,7 @@ class MailManagementController(QObject):
         self.settings_requested.emit()  # 표시 직후 최신 설정을 조회한다.
 
     def poll_inbox(self):
-        if not hasattr(self, "login_dialog") or self.login_dialog.isVisible():
+        if not self.current_user_email:
             return  # 로그인 전이나 로그인 창이 열려 있으면 조회하지 않는다.
         if self.poll_request_pending or self.mail_request_pending:
             return  # 기존 요청이 끝나지 않았으면 중복 요청을 막는다.
@@ -220,10 +222,11 @@ class MailManagementController(QObject):
         self.poll_inbox_requested.emit()  # worker에 받은 메일 조회를 요청한다.
 
     def show(self):
-        self.window.show()  # 메인 메일 화면을 표시한다.
-        self.login_dialog = LoginDialog(self.window)  # 로그인 모달 창을 만든다.
-        self.login_dialog.loginRequested.connect(self.login_requested.emit)  # 로그인 정보를 worker로 전달한다.
-        self.login_dialog.exec()  # 로그인 전까지 사용자가 다음 화면을 조작하지 못하게 한다.
+        self.window.show()  # 로그인 창 없이 메일 화면만 표시한다.
+        if not self.current_user_email:
+            self.current_user_email = os.getenv("CLOUD_MAIL_USER", "user@jewel.cloud")
+            password = os.getenv("CLOUD_MAIL_PASSWORD", "user1234")
+            self.login_requested.emit(self.current_user_email, password)
 
     def delete_mail(self):
         if self.folder == "trash":
@@ -426,9 +429,7 @@ class MailManagementController(QObject):
     @Slot(dict)
     def handle_result(self, response: dict):
         if response.get("code") == "LOGIN_SUCCESS":
-            self.current_user_email = self.login_dialog.emailEdit.text().strip()  # 로그인한 계정 이메일을 보관한다.
-            self.login_dialog.accept()  # 로그인 모달 창을 닫는다.
-            self.window.statusLabel.setText("로그인되었습니다.")  # 로그인 성공 상태를 표시한다.
+            self.window.statusLabel.setText("메일을 불러오는 중입니다.")
             self.inbox_poll_initialized = False  # 새 메일 감지 기준을 초기화한다.
             self.known_inbox_ids.clear()  # 이전 로그인 계정의 메일 ID를 제거한다.
             self.inbox_poll_timer.start()  # 실시간 새 메일 조회를 시작한다.
@@ -436,7 +437,7 @@ class MailManagementController(QObject):
             self.load_folder("all")  # 전체 메일함을 초기 화면으로 연다.
             return  # 로그인 응답 처리를 끝낸다.
         if response.get("code") == "LOGIN_FAILED":
-            self.login_dialog.set_status(response.get("message", "로그인에 실패했습니다."))  # 로그인 창에 실패 원인을 표시한다.
+            self.window.statusLabel.setText(response.get("message", "메일 서버 로그인에 실패했습니다."))
             return  # 로그인 실패 처리를 끝낸다.
         if response.get("_purpose") == "poll_inbox":
             self.poll_request_pending = False  # 주기 조회 완료 상태로 되돌린다.
@@ -619,8 +620,6 @@ class MailManagementController(QObject):
     def handle_error(self, message: str):
         self.mail_request_pending = False  # 오류 후 새 목록 요청을 허용한다.
         self.poll_request_pending = False  # 오류 후 새 주기 조회를 허용한다.
-        if hasattr(self, "login_dialog") and self.login_dialog.isVisible():
-            self.login_dialog.set_status(f"통신 오류: {message}")  # 로그인 중 오류를 로그인 창에 표시한다.
         self.window.settingsStatusLabel.setText(f"통신 오류: {message}")  # 설정 영역에 오류를 표시한다.
         self.window.blacklistStatusLabel.setText(f"통신 오류: {message}")  # 블랙리스트 영역에 오류를 표시한다.
         self.window.statusLabel.setText(f"통신 오류: {message}")  # 메일 영역에 오류를 표시한다.

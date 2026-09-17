@@ -1,1 +1,1 @@
-"""PySide6 client package."""
+"""Shared mail-client protocol package."""

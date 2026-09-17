@@ -9,10 +9,7 @@ from PySide6.QtCore import QObject, QThread, Signal, Slot, QTimer  # Qt 객체·
 from PySide6.QtUiTools import QUiLoader  # Qt Designer UI 파일을 읽는 로더다.
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QFormLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidgetItem, QTextEdit, QVBoxLayout, QHBoxLayout  # 메일 화면에 필요한 위젯과 레이아웃이다.
 
-try:
-    from client.mail_tcp_client import MailTcpClient  # 프로젝트 루트에서 실행할 때의 클라이언트 import다.
-except ModuleNotFoundError:  # 패키지 모듈 방식으로 실행할 때의 대체 경로다.
-    from mail_client.client.mail_tcp_client import MailTcpClient  # mail_client 패키지 경로에서 클라이언트를 가져온다.
+from client.mail_tcp_client import MailTcpClient
 
 
 class MailWorker(QObject):
@@ -340,7 +337,7 @@ class MailWindowController:
 
     def __init__(self):
         loader = QUiLoader()  # Qt Designer UI를 읽을 로더를 생성한다.
-        ui_path = Path(__file__).resolve().parents[1] / "ui" / "mail_window.ui"  # 메일 화면 UI 파일 경로를 계산한다.
+        ui_path = Path(__file__).resolve().parents[1] / "mail" / "mail_client" / "ui" / "mail_window.ui"
         self.window = loader.load(str(ui_path))  # UI 파일을 실제 위젯 창으로 로드한다.
         self.worker = MailWorker()  # 서버 통신 담당 객체를 만든다.
         self.thread = QThread()  # 통신 작업을 분리할 스레드를 만든다.

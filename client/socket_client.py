@@ -1,6 +1,7 @@
-import socket                                                               
+import os
+import socket
 
-SERVER_IP = "10.10.10.107"
+SERVER_IP = os.getenv("JEWEL_SERVER_HOST", "127.0.0.1")
 SOCKET_PORT = 9000
 
 
@@ -17,4 +18,3 @@ def connect_socket(user_id):                                                    
     print("Socket 서버에 user_id 전송:", user_id)
 
     client_socket.close()
-    

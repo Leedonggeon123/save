@@ -16,13 +16,10 @@ import threading  # 클라이언트별 응답 전송을 보호할 잠금에 사�
 from datetime import datetime, timezone  # UTC 기준 메일 삭제 시각을 만든다.
 from pathlib import Path  # DB 경로를 운영체제에 맞게 조합한다.
 
-try:
-    from common.tcp_protocol import recv_frame, send_frame  # 패키지 내부 실행 시 프레임 송수신 함수를 가져온다.
-except ModuleNotFoundError:  # 모듈 경로가 프로젝트 루트 기준일 때의 대체 import 경로다.
-    from mail_client.common.tcp_protocol import recv_frame, send_frame  # mail_client 패키지 경로에서 다시 가져온다.
+from client.tcp_protocol import recv_frame, send_frame
 
-ROOT = Path(__file__).resolve().parents[1]  # server 폴더의 상위인 mail_client 프로젝트 경로를 계산한다.
-DB_PATH = Path(os.getenv("CLOUD_DB_PATH", str(ROOT / "data" / "jewel_cloud.sqlite3")))  # 환경 변수 또는 기본 DB 경로를 사용한다.
+ROOT = Path(__file__).resolve().parents[1]
+DB_PATH = Path(os.getenv("CLOUD_DB_PATH", str(ROOT / "mail" / "mail_client" / "data" / "jewel_cloud.sqlite3")))
 HOST = os.getenv("CLOUD_SERVER_HOST", "0.0.0.0")  # 모든 네트워크 인터페이스에서 받을 주소를 설정한다.
 PORT = int(os.getenv("CLOUD_SERVER_PORT", "9000"))  # 환경 변수의 포트 문자열을 정수 포트로 변환한다.
 
@@ -391,10 +388,7 @@ class MailTcpServer(socketserver.ThreadingTCPServer):
 
 
 def main():
-    try:
-        from database.init_db import initialize  # 프로젝트 루트 기준 실행에서 초기화 함수를 가져온다.
-    except ModuleNotFoundError:
-        from mail_client.database.init_db import initialize  # 패키지 모듈 실행 시 대체 경로를 사용한다.
+    from mail.mail_client.database.init_db import initialize
     initialize(DB_PATH)  # 서버 시작 전에 DB와 최신 스키마를 준비한다.
     with MailTcpServer((HOST, PORT), MailHandler) as server:  # 서버 리소스를 자동 정리할 수 있도록 컨텍스트로 연다.
         print(f"Mail TCP server listening on {HOST}:{PORT}")  # 운영자가 바인딩 주소와 포트를 확인할 수 있게 출력한다.

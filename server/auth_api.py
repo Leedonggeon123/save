@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
-import pymysql
+import sqlite3
 from .auth_db import db, ensure_auth_table, ensure_admin_column, hash_password, verify_password
 
 # 모든 인증 URL 앞에 /api를 붙이는 라우터
@@ -102,7 +102,7 @@ def request_code(request: EmailRequest):
             raise HTTPException(409, "이미 가입된 이메일입니다.")
         c.execute("""INSERT INTO email_verification(email,code_hash,expires_at,attempts)
                      VALUES(%s,%s,%s,0)
-                     ON DUPLICATE KEY UPDATE code_hash=VALUES(code_hash),expires_at=VALUES(expires_at),attempts=0""",
+                     ON CONFLICT(email) DO UPDATE SET code_hash=excluded.code_hash,expires_at=excluded.expires_at,attempts=0""",
                   (str(request.email), hash_password(code), expires))
     try:
         send_gmail_code(str(request.email), code)
@@ -130,8 +130,8 @@ def signup(request: SignupRequest):
             c.execute("UPDATE email_verification SET attempts=attempts+1 WHERE email=%s", (email,))
             raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
         try:
-            c.execute("INSERT INTO `USER`(email,password_hash,name) VALUES(%s,%s,%s)", (email, hash_password(request.password), request.name))
-        except pymysql.IntegrityError as exc:
+            c.execute("INSERT INTO `USER`(email,password_hash,password_salt,name) VALUES(%s,%s,'',%s)", (email, hash_password(request.password), request.name))
+        except sqlite3.IntegrityError as exc:
             raise HTTPException(409, "이미 가입된 이메일입니다.") from exc
         user_id = c.lastrowid
         # 가입 직후에는 로그인 이메일을 기본 발신 이메일로 저장
@@ -212,7 +212,7 @@ def login(request: LoginRequest):
         "access_token": token,
         "user_id": user["user_id"],
         "name": user["name"],
-        "is_admin": bool(user.get("is_admin", 0))
+        "is_admin": bool(user["is_admin"])
     }
     
     

@@ -23,13 +23,27 @@ def start_mail_server() -> subprocess.Popen:
     """현재 테스트 프로젝트의 메일 TCP 서버만 로컬에서 시작한다."""
     environment = os.environ.copy()
     environment["PYTHONPATH"] = os.pathsep.join(
-        filter(None, (str(MAIL_CLIENT_ROOT), environment.get("PYTHONPATH", "")))
+        filter(None, (str(PROJECT_ROOT), environment.get("PYTHONPATH", "")))
     )
     environment["CLOUD_SERVER_HOST"] = "127.0.0.1"
     environment["CLOUD_SERVER_PORT"] = "9000"
+    environment["CLOUD_DB_PATH"] = str(MAIL_CLIENT_ROOT / "data" / "jewel_cloud.sqlite3")
     return subprocess.Popen(
         [sys.executable, "-m", "server.mail_tcp_server"],
-        cwd=MAIL_CLIENT_ROOT,
+        cwd=PROJECT_ROOT,
+        env=environment,
+    )
+
+
+def start_http_server() -> subprocess.Popen:
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = os.pathsep.join(
+        filter(None, (str(PROJECT_ROOT), environment.get("PYTHONPATH", "")))
+    )
+    environment["JEWEL_SERVER_URL"] = "http://127.0.0.1:8000"
+    return subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "server.main:app", "--host", "127.0.0.1", "--port", "8000"],
+        cwd=PROJECT_ROOT,
         env=environment,
     )
 
@@ -40,7 +54,7 @@ def install_mail_button_bridge() -> None:
     sys.path.insert(0, str(MAIL_ROOT))
 
     from client.main_window import DashboardPage
-    from mail_client.client.mail_management_window import MailManagementController
+    from client.mail_management_window import MailManagementController
 
     controller_holder: dict[str, MailManagementController | None] = {"controller": None}
 
@@ -55,11 +69,19 @@ def install_mail_button_bridge() -> None:
 
 
 def main() -> int:
+    os.environ.setdefault("JEWEL_SERVER_URL", "http://127.0.0.1:8000")
+    http_server = start_http_server()
     mail_server = start_mail_server()
     try:
         install_mail_button_bridge()
         runpy.run_path(str(PROJECT_ROOT / "main_gui.py"), run_name="__main__")
     finally:
+        if http_server.poll() is None:
+            http_server.terminate()
+            try:
+                http_server.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                http_server.kill()
         if mail_server.poll() is None:
             mail_server.terminate()
             try:

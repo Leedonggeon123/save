@@ -12,6 +12,8 @@
 from pathlib import Path
 import shutil
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_STORAGE = str(PROJECT_ROOT / "storage")
 
 
 
@@ -34,7 +36,7 @@ def get_unique_path(folder: Path, filename: str) -> Path:                       
         number += 1                                                                     # 이미 있으면 숫자를 1증가 
 
 
-def save_file(source_path: str, user_id: int, storage_root: str = "storage") -> dict:           # 이 함수는 사용자가 업로드한 파일을 서버의 storage폴더에 저장하는 함수                                                 # 인자 (storage_root는 서버 파일을 저장할 기본 폴더 기본값은 storage)
+def save_file(source_path: str, user_id: int, storage_root: str = DEFAULT_STORAGE) -> dict:
     source = Path(source_path)                                                                  # 사용자가 선택한 원본 파일 경로를 path 객체로 변환
 
     if not source.exists():                                                                         # 원본 파일이 실제로 있는지 확인
@@ -54,7 +56,7 @@ def save_file(source_path: str, user_id: int, storage_root: str = "storage") -> 
     }
 
 
-def list_files(user_id: int, storage_root: str = "storage") -> list:            # 이 함수는 특정 사용자의 서버 파일 목록을 가져오는 함수
+def list_files(user_id: int, storage_root: str = DEFAULT_STORAGE) -> list:
                                                                                 # 인자 user_id는 파일 목록을 확인할 사용자 번호
                                                                              # 인자 storage_root는 파일이 저장된 기본 폴더
 
@@ -121,7 +123,7 @@ def download_file(                                              # 이 함수는 
 
 
 
-def get_storage_usage(user_id: int, storage_root: str = "storage") -> int:
+def get_storage_usage(user_id: int, storage_root: str = DEFAULT_STORAGE) -> int:
     """
     사용자가 현재 사용 중인 전체 파일 용량을 계산합니다.
 

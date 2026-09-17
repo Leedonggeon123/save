@@ -15,13 +15,14 @@ class SettingsPage(QWidget):
     """설정 메뉴 화면"""
 
     # go_back은 메인 화면, logout은 로그인 화면, show_personal은 개인설정으로 연결
-    def __init__(self, go_back, logout, show_personal, show_file_settings):
+    def __init__(self, go_back, logout, show_personal, show_file_settings, show_mail_settings=None):
         super().__init__()
         self.go_back = go_back
         self.logout = logout
         self.show_personal = show_personal
         
         self.show_file_settings = show_file_settings                    # 파일 설정 버튼을 클릭했을떄
+        self.show_mail_settings = show_mail_settings
         
         self.setStyleSheet(
             "QWidget { background: white; }"
@@ -38,7 +39,7 @@ class SettingsPage(QWidget):
 
         header = QHBoxLayout()
         icon = QLabel()
-        icon_path = PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png"
+        icon_path = PROJECT_ROOT / "mail" / "mail_client" / "assets" / "jewel_cloud_logo.png"
         icon.setPixmap(logo_pixmap(icon_path))
         header.addWidget(icon)
         brand = QLabel("JEWEL")
@@ -78,7 +79,8 @@ class SettingsPage(QWidget):
 
     # 메일 설정. 연결 안 됨
     def open_mail(self):
-        print("메일설정 버튼 클릭", flush=True)
+        if self.show_mail_settings:
+            self.show_mail_settings()
 
     # 파일 설정. 연결 안 됨
     def open_file(self):
@@ -126,7 +128,7 @@ class PersonalSettingsPage(QWidget):
         logo_row = QHBoxLayout(logo_box)
         logo_row.setContentsMargins(6, 4, 6, 4)
         icon = QLabel()
-        icon_path = PROJECT_ROOT / "source" / "image" / "jewel_cloud_icon.png"
+        icon_path = PROJECT_ROOT / "mail" / "mail_client" / "assets" / "jewel_cloud_logo.png"
         icon.setPixmap(logo_pixmap(icon_path))
         logo_row.addWidget(icon)
         brand = QLabel("Jewel")
