@@ -49,13 +49,49 @@ class FilePage:
         header = table.horizontalHeader()                                                                                         # 선택 열은 체크박스 크기에 맞춤
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)                                                   # 크기에 맞춰 조절                                                # 파일명 열이 남은 공간을 채움
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)                                                             # 빈공간 채우기                                                  # 다운로드 열은 버튼 크기에 맞춤
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)                                                    # 왼쪽 행 번호 숨기기
-        table.verticalHeader().setVisible(False)                                                                                   # 테이블 왼쪽 숫자 숨기기
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)                                                    # 왼쪽 행 번호 숨기기                                                                               # 테이블 왼쪽 숫자 숨기기
+        table.setColumnWidth(2, 110)
 
         self.ui.upload_btn.clicked.connect(self.upload_clicked)
         self.ui.delete_btn.clicked.connect(self.delete_checked_files)                                                       # 삭제 클릭시
+        self.ui.select_all_btn.clicked.connect(self.select_all_files)                                               # 체크박스 전체선택 기능
+    
+    
+    
+    
+    
+    
+    def select_all_files(self):                     # 전체선택 로직
+        table = self.ui.file_table
 
+        # 하나라도 선택되지 않은 파일이 있는지 확인
+        all_checked = True
 
+        for row in range(table.rowCount()):
+            check_item = table.item(row, 0)
+
+            if check_item and check_item.checkState() != Qt.CheckState.Checked:
+                all_checked = False
+                break
+
+        # 전부 선택되어 있으면 전체 해제
+        if all_checked:
+            for row in range(table.rowCount()):
+                check_item = table.item(row, 0)
+
+                if check_item:
+                    check_item.setCheckState(Qt.CheckState.Unchecked)
+
+        # 하나라도 선택되지 않았으면 전체 선택
+        else:
+            for row in range(table.rowCount()):
+                check_item = table.item(row, 0)
+
+                if check_item:
+                    check_item.setCheckState(Qt.CheckState.Checked)
+        
+    
+   
    
     def upload_clicked(self):  # 파일 업로드
         # 파일 탐색기를 열어서 업로드할 파일을 선택합니다.
@@ -196,7 +232,6 @@ class FilePage:
         if response.status_code == 200:                                     # 정상 적으로 됐을떄
             data = response.json()
             file_list = data["files"]                                       # 딕셔너리 안에 정보 파일명만 가져오기
-
             self.show_files(file_list)                                           # 테이블 함수 호출
         else:
             print(response.text)
@@ -204,65 +239,64 @@ class FilePage:
 
 
 
-    def show_files(self, file_list):                                                     # 테이블 함수
+ 
+    def show_files(self, file_list):
         table = self.ui.file_table
-        table.setRowCount(0)                                                      # 기본 테이블 모든 행 삭제
+        table.setRowCount(0)
 
-        for file_info in file_list:                                                # 서버 파일 목록
-            row = table.rowCount()                                                   # 테이블 전체 열
-            table.insertRow(row)                                                  # 새로운 행을 추가
+        for file_info in file_list:
+
+            row = table.rowCount()
+            table.insertRow(row)
 
             check_item = QTableWidgetItem()
-            check_item.setCheckState(Qt.CheckState.Unchecked)                            # 체크박스 상태 지정
+            check_item.setCheckState(Qt.CheckState.Unchecked)
 
-            filename = file_info["file_name"]                           # 딕셔너리에서 파일명만 추출
-            file_path = file_info["file_path"]                              # 딕셔너리에서 업로드한 파일 경로 추출
+            filename = file_info["file_name"]
+            file_path = file_info["file_path"]
 
+            name_item = QTableWidgetItem(filename)
 
-            name_item = QTableWidgetItem(filename)                                          # 업로드한 파일 이름
-
-            name_item.setData(Qt.ItemDataRole.UserRole, file_path)              # 화면에는 보이지 않지만 서버 파일 경로를 저장 (네임 아이템에 숨겨둔 경로 저장)
-
-
-            download_button = QPushButton("다운로드")                       # 다운로드 버튼 생성
-
-            download_button.clicked.connect(
-                lambda checked=False,                                       # 버튼 클릭시 슬롯함수에 인자를 넣기 위해 람다 사용(함수로 만들어서 넣음) 불값은 필요없어서 false
-                path=file_path,                                         # 업로드한 파일경로
-                name=filename: self.download_file(path, name)                # 다운로드 함수 호출 경로와 이름 넣어서
-
+            name_item.setData(
+                Qt.ItemDataRole.UserRole,
+                file_path
             )
 
-            table.setItem(row, 0, check_item)                                               # 체크박스 생성
-            table.setItem(row, 1, name_item)                                                # 업로드한 파일 이름
+            download_button = QPushButton("다운로드")
+
+            download_button.clicked.connect(
+                lambda checked=False,
+                    path=file_path,
+                    name=filename: self.download_file(path, name)
+            )
+
+            table.setItem(row, 0, check_item)
+            table.setItem(row, 1, name_item)
             table.setCellWidget(row, 2, download_button)
 
-
+  
     def delete_checked_files(self):
         table = self.ui.file_table
 
-        for row in range(table.rowCount()):         # 테이블 전체 행 확인
+        for row in range(table.rowCount()):
             check_item = table.item(row, 0)
 
             if check_item.checkState() == Qt.CheckState.Checked:
                 name_item = table.item(row, 1)
 
-                file_path = name_item.data(Qt.ItemDataRole.UserRole)        # UserRole에 저장해둔 서버 파일 경로 가져오기
+                file_path = name_item.data(Qt.ItemDataRole.UserRole)
 
-                response = requests.delete(                                 # 서버 한테 삭제 요청
+                response = requests.delete(
                     f"{FAST_URL}/files",
                     params={
                         "file_path": file_path
                     }
                 )
 
-                print("삭제 결과:",name_item.text())
+                print("삭제 결과:", name_item.text())
 
-        self.load_file_list()                # 삭제 후 테이블 새로고침
-   
-   
-        
-        
+        self.load_file_list()
+            
         
         
     def load_storage_usage(self):
@@ -280,11 +314,7 @@ class FilePage:
                 print("사용 용량 조회 실패:", response.text)
                 return
 
-            # data = response.json()
 
-            # used_mb = data["used_mb"]
-
-            # print(f"현재 사용 용량: {used_mb}MB")
 
         except requests.RequestException as error:
             print("사용 용량 조회 중 서버 연결 실패:", error)     

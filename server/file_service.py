@@ -65,7 +65,7 @@ def list_files(user_id: int, storage_root: str = "storage") -> list:            
     user_folder = Path(storage_root) / str(user_id)
     # 사용자별 저장 폴더의 경로를 만듭니다.
     # 예: storage/1
-
+    
     if not user_folder.exists():
         # 사용자 폴더가 없으면 파일과 폴더가 없는 것으로 처리합니다.
         return []

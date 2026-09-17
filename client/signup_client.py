@@ -64,14 +64,13 @@ def verify_code(email: str, code: str) -> dict[str, Any]:
     )
 
 
-def signup(email: str, name: str, phone: str, password: str, code: str) -> dict[str, Any]:
+def signup(email: str, name: str, password: str, code: str) -> dict[str, Any]:
     """인증된 이메일과 사용자 정보를 최종 회원가입 API로 전송"""
     return _post(
         "/api/signup",
         {
             "email": email,
             "name": name,
-            "phone": phone,
             "password": password,
             "verification_code": code,
         },

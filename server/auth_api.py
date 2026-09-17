@@ -26,7 +26,8 @@ class EmailRequest(BaseModel):
 class SignupRequest(BaseModel):
     email: EmailStr
     name: str = Field(min_length=1, max_length=50)
-    phone: str = Field(pattern=r"^010-\d{4}-\d{4}$")
+    # 전화번호는 더 이상 회원가입 입력값으로 받지 않습니다.
+    phone: str = ""
     password: str = Field(min_length=10, max_length=128)
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
@@ -35,9 +36,16 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-class FindIdRequest(BaseModel):
+class PasswordResetCodeRequest(BaseModel):
     name: str = Field(min_length=1, max_length=50)
-    phone: str = Field(pattern=r"^010-\d{4}-\d{4}$")
+    email: EmailStr
+
+class PasswordResetRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    email: EmailStr
+    verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
+    password: str = Field(min_length=10, max_length=128)
+
 
 # 기본 발신 이메일 수정 요청 형식
 class SenderEmailUpdate(BaseModel):
@@ -48,7 +56,6 @@ class SenderEmailUpdate(BaseModel):
 class ProfileUpdate(BaseModel):
     user_id: int
     name: str = Field(min_length=1, max_length=50)
-    phone: str = Field(pattern=r"^010-\d{4}-\d{4}$")
     password: str | None = Field(default=None, min_length=10, max_length=128)
 
 # 인증번호 확인 요청 형식
@@ -137,7 +144,7 @@ def signup(request: SignupRequest):
             c.execute("UPDATE email_verification SET attempts=attempts+1 WHERE email=%s", (email,))
             raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
         try:
-            c.execute("INSERT INTO `USER`(email,password_hash,name,phone) VALUES(%s,%s,%s,%s)", (email, hash_password(request.password), request.name, request.phone))
+            c.execute("INSERT INTO `USER`(email,password_hash,name,phone) VALUES(%s,%s,%s,%s)", (email, hash_password(request.password), request.name, ""))
         except pymysql.IntegrityError as exc:
             raise HTTPException(409, "이미 가입된 이메일입니다.") from exc
         user_id = c.lastrowid
@@ -174,16 +181,53 @@ def verify_code(request: CodeCheckRequest):
 
 
 
-# USER에서 계정을 조회하고 비밀번호 검증
-@router.post("/find-id")
-def find_id(request: FindIdRequest):
-    """이름과 전화번호가 일치하는 회원의 이메일 아이디를 반환합니다."""
+# 비밀번호 재설정용 인증 메일 발송
+@router.post("/password/reset/request-code", status_code=202)
+def request_password_reset_code(request: PasswordResetCodeRequest):
+    """이름과 이메일이 일치하는 계정에 비밀번호 재설정 인증번호를 보냅니다."""
+    validate_gmail(str(request.email))
+    email = str(request.email)
     with db() as c:
-        c.execute("SELECT email FROM `USER` WHERE name=%s AND phone=%s LIMIT 1", (request.name, request.phone))
+        c.execute("SELECT user_id FROM `USER` WHERE name=%s AND email=%s LIMIT 1", (request.name, email))
+        if not c.fetchone():
+            raise HTTPException(404, "이름과 이메일이 일치하는 회원 정보가 없습니다.")
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=CODE_TTL_MINUTES)
+        c.execute("""INSERT INTO email_verification(email,code_hash,expires_at,attempts)
+                     VALUES(%s,%s,%s,0)
+                     ON DUPLICATE KEY UPDATE code_hash=VALUES(code_hash),expires_at=VALUES(expires_at),attempts=0""",
+                  (email, hash_password(code), expires))
+    try:
+        send_gmail_code(email, code)
+    except HTTPException:
+        with db() as c:
+            c.execute("DELETE FROM email_verification WHERE email=%s", (email,))
+        raise
+    return {"message": "비밀번호 재설정 인증 메일을 전송했습니다."}
+
+# 인증번호와 이름·이메일을 확인한 뒤 비밀번호를 새 값으로 변경
+@router.post("/password/reset")
+def reset_password(request: PasswordResetRequest):
+    """유효한 이메일 인증번호가 있을 때만 비밀번호를 변경합니다."""
+    validate_gmail(str(request.email))
+    validate_password(request.password)
+    email = str(request.email)
+    with db() as c:
+        c.execute("SELECT user_id FROM `USER` WHERE name=%s AND email=%s LIMIT 1", (request.name, email))
         user = c.fetchone()
-    if not user:
-        raise HTTPException(404, "일치하는 회원 정보가 없습니다.")
-    return {"email": user["email"]}
+        if not user:
+            raise HTTPException(404, "이름과 이메일이 일치하는 회원 정보가 없습니다.")
+        c.execute("SELECT * FROM email_verification WHERE email=%s FOR UPDATE", (email,))
+        row = c.fetchone()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        if not row or row["expires_at"] < now:
+            raise HTTPException(400, "인증 코드가 없거나 만료되었습니다.")
+        if row["attempts"] >= 5 or not verify_password(request.verification_code, row["code_hash"]):
+            c.execute("UPDATE email_verification SET attempts=attempts+1 WHERE email=%s", (email,))
+            raise HTTPException(400, "인증 코드가 올바르지 않습니다.")
+        c.execute("UPDATE `USER` SET password_hash=%s WHERE user_id=%s", (hash_password(request.password), user["user_id"]))
+        c.execute("DELETE FROM email_verification WHERE email=%s", (email,))
+    return {"message": "비밀번호가 변경되었습니다."}
 
 @router.post("/login")
 def login(request: LoginRequest):
@@ -351,21 +395,11 @@ def update_profile(request: ProfileUpdate):
             raise HTTPException(404, "사용자를 찾을 수 없습니다.")
         if request.password:
             c.execute(
-                "UPDATE `USER` SET name=%s, phone=%s, password_hash=%s WHERE user_id=%s",
-                (request.name, request.phone, hash_password(request.password), request.user_id),
+                "UPDATE `USER` SET name=%s, password_hash=%s WHERE user_id=%s",
+                (request.name, hash_password(request.password), request.user_id),
             )
         else:
-            c.execute("UPDATE `USER` SET name=%s, phone=%s WHERE user_id=%s", (request.name, request.phone, request.user_id))
+            c.execute("UPDATE `USER` SET name=%s WHERE user_id=%s", (request.name, request.user_id))
     return {"saved": True, "message": "개인정보가 수정되었습니다."}
-
-
-@router.get("/settings/profile/{user_id}")
-def get_profile(user_id: int):
-    with db() as c:
-        c.execute("SELECT phone FROM `USER` WHERE user_id=%s", (user_id,))
-        row = c.fetchone()
-    if not row:
-        raise HTTPException(404, "사용자를 찾을 수 없습니다.")
-    return {"phone": row.get("phone") or ""}
 
 

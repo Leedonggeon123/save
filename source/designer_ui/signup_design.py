@@ -46,10 +46,6 @@ class Ui_Form(object):
 
         self.main_layout.addWidget(self.name_input)
 
-        self.phone_input = QLineEdit(Form)
-        self.phone_input.setObjectName(u"phone_input")
-        self.main_layout.addWidget(self.phone_input)
-
         self.email_layout = QHBoxLayout()
         self.email_layout.setObjectName(u"email_layout")
         self.email_input = QLineEdit(Form)
@@ -121,7 +117,6 @@ class Ui_Form(object):
         Form.setWindowTitle(QCoreApplication.translate("Form", u"JEWEL Cloud - \ud68c\uc6d0\uac00\uc785", None))
         self.title_label.setText(QCoreApplication.translate("Form", u"JEWEL Cloud", None))
         self.name_input.setPlaceholderText(QCoreApplication.translate("Form", u"\uc774\ub984", None))
-        self.phone_input.setPlaceholderText(QCoreApplication.translate("Form", u"전화번호 (010-1234-5678)", None))
         self.email_input.setPlaceholderText(QCoreApplication.translate("Form", u"\uad6c\uae00 \uc774\uba54\uc77c", None))
         self.check_email_button.setText(QCoreApplication.translate("Form", u"\uc544\uc774\ub514 \uc911\ubcf5", None))
         self.code_input.setPlaceholderText(QCoreApplication.translate("Form", u"\uc778\uc99d\ubc88\ud638", None))

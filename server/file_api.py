@@ -142,7 +142,8 @@ async def upload_file(                                                          
     
 @router.get("")
 def get_file_list(user_id: int):
-    # DB에서 현재 사용자의 파일 정보를 가져옵니다.
+
+    # 1. DB에서 파일 목록 가져오기
     with db() as cursor:
         cursor.execute(
             """
@@ -153,9 +154,10 @@ def get_file_list(user_id: int):
             """,
             (user_id,)
         )
+
         files = cursor.fetchall()
 
-    # 클라이언트가 기존과 같은 형식으로 받을 수 있도록 정리합니다.
+    # 2. DB의 파일 정보를 목록으로 정리
     file_list = []
 
     for file_info in files:
@@ -167,10 +169,17 @@ def get_file_list(user_id: int):
             "file_path": file_info["file_path"],
         })
 
+    # 3. 실제 storage에서 폴더 목록 가져오기
+    storage_list = list_files(user_id)
+
+    # 4. 폴더만 추가
+    for item in storage_list:
+        if item["type"] == "folder":
+            file_list.append(item)
+
     return {
         "files": file_list
     }
-
 
 
 
@@ -199,12 +208,18 @@ def download_file(file_path: str):
     
 @router.delete("")
 def delete_server_file(file_path: str):
+    """
+    서버에 저장된 파일을 삭제한다.
+    """
     try:
         remove_file(file_path)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+        raise HTTPException(
+            status_code=404,
+            detail="파일을 찾을 수 없습니다.",
+        )
 
-    # 실제 파일이 삭제된 후 DB에서도 해당 파일 기록을 삭제합니다.
+    # DB에서도 삭제된 파일 정보를 제거
     with db() as cursor:
         cursor.execute(
             """
@@ -214,8 +229,10 @@ def delete_server_file(file_path: str):
             (file_path,)
         )
 
-    return {"message": "파일 삭제 완료", "file_path": file_path}
-    
+    return {
+        "message": "파일 삭제 완료",
+        "file_path": file_path,
+    }
     
     
     
