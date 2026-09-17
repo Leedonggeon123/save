@@ -12,7 +12,7 @@ from source.designer_ui.admin_design import Ui_AdminPage, apply_admin_table_styl
 from client.components.logout_button import LogoutButton
 from client.session import UserSession
 from client.ui_common import SERVER_URL
-from client.admin_client import AdminNoticeContentWidget  # 공지 위젯 임포트
+from client.admin_client import AdminNoticeContentWidget  # 공지 위젯 임port
 
 
 class AdminPage(QWidget):
@@ -311,6 +311,45 @@ class AdminPage(QWidget):
             self.load_grades()
         except requests.RequestException:
             QMessageBox.warning(self, "연결 오류", "서버에 연결할 수 없습니다.")
+
+
+def apply_admin_table_style(table):
+    """회원등급 테이블의 고정 스타일 적용."""
+    from PySide6.QtWidgets import QAbstractItemView, QHeaderView
+
+    table.horizontalHeader().setStretchLastSection(False)
+    table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+    table.setColumnWidth(0, 220)
+    table.setColumnWidth(1, 380)
+    table.setColumnWidth(2, 180)
+    table.setColumnWidth(3, 180)
+    table.verticalHeader().setVisible(True)
+    table.verticalHeader().setFixedWidth(28)
+    table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+    table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+    table.setAlternatingRowColors(False)
+    table.setStyleSheet(
+        "QTableWidget { border:1px solid #222; gridline-color:#c6c6c6;"
+        " color:#111; background:white; }"
+        "QTableWidget::item { color:#111; padding:4px; }"
+        
+        # [추가] 콤보박스 마우스 오버(hover) 및 드롭다운 시 글씨가 하얗게 사라지는 문제 해결 스타일
+        "QComboBox { background: white; color: #111; border: 1px solid #c6c6c6; padding: 2px; }"
+        "QComboBox:hover { background: #e3f2fd; color: #111; }"
+        "QComboBox::drop-down { subcontrol-origin: padding; subcontrol-position: top right; width: 20px; border-left: 1px solid #c6c6c6; }"
+        "QComboBox QAbstractItemView { background: white; color: #111; selection-background-color: #48aff0; selection-color: white; }"
+        
+        "QHeaderView::section { background:#8fd0f7; color:#111;"
+        " font-weight:600; border:1px solid #6ca8c7; padding:6px; }"
+    )
+    table.verticalHeader().setStyleSheet(
+        "QHeaderView::section { background:white; color:#111;"
+        " border:1px solid #c6c6c6; }"
+    )
+    table.horizontalHeader().setStyleSheet(
+        "QHeaderView::section { background:#8fd0f7; color:#111;"
+        " font-weight:600; border:1px solid #6ca8c7; padding:6px; }"
+    )
 
 
 __all__ = ["AdminPage"]
