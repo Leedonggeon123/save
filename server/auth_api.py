@@ -28,9 +28,10 @@ class EmailRequest(BaseModel):
     email: EmailStr
 
 # 최종 회원가입 요청 형식
+# Pydantic이 자동으로 검사
 class SignupRequest(BaseModel):
     email: EmailStr
-    name: str = Field(min_length=1, max_length=50)
+    name: str = Field(min_length=1, max_length=10)
     password: str = Field(min_length=10, max_length=20)
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
@@ -39,12 +40,14 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+# 비밀번호 재설정 인증번호 요청 형식
 class PasswordResetCodeRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=50)
+    name: str = Field(min_length=1, max_length=10)
     email: EmailStr
 
+# 새 비밀번호 설정 최종 요청 형식
 class PasswordResetRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=50)
+    name: str = Field(min_length=1, max_length=10)
     email: EmailStr
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
     password: str = Field(min_length=10, max_length=20)
@@ -58,7 +61,7 @@ class SenderEmailUpdate(BaseModel):
 # 개인정보 수정 요청 형식 password는 선택값
 class ProfileUpdate(BaseModel):
     user_id: int
-    name: str = Field(min_length=1, max_length=50)
+    name: str = Field(min_length=1, max_length=10)
     password: str | None = Field(default=None, min_length=10, max_length=20)
 
 # 인증번호 확인 요청 형식
