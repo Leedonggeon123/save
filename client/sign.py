@@ -88,8 +88,8 @@ class SignupWindow(QWidget):
             self._buttons_lowered = True
             QTimer.singleShot(0, self.lower_action_buttons)
 
+    # 버튼 위치 조정      
     def lower_action_buttons(self) -> None:
-        """레이아웃이 배치된 뒤 인증 관련 버튼만 2px 아래로 이동합니다."""
         for button in (
             self.ui.check_email_button,
             self.ui.send_code_button,
