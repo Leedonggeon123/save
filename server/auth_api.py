@@ -26,13 +26,8 @@ class EmailRequest(BaseModel):
 # Pydantic이 자동으로 검사
 class SignupRequest(BaseModel):
     email: EmailStr
-<<<<<<< HEAD
     name: str = Field(min_length=1, max_length=10)
     password: str = Field(min_length=10, max_length=20)
-=======
-    name: str = Field(min_length=1, max_length=50)
-    password: str = Field(min_length=10, max_length=128)
->>>>>>> 796341ad1b3e3e19cb77df3b77338d7dff76a471
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
 # 로그인 요청 형식
@@ -61,13 +56,9 @@ class SenderEmailUpdate(BaseModel):
 # 개인정보 수정 요청 형식 password는 선택값
 class ProfileUpdate(BaseModel):
     user_id: int
-<<<<<<< HEAD
     name: str = Field(min_length=1, max_length=10)
     password: str | None = Field(default=None, min_length=10, max_length=20)
-=======
-    name: str = Field(min_length=1, max_length=50)
-    password: str | None = Field(default=None, min_length=10, max_length=128)
->>>>>>> 796341ad1b3e3e19cb77df3b77338d7dff76a471
+
 
 # 인증번호 확인 요청 형식
 class CodeCheckRequest(BaseModel):
