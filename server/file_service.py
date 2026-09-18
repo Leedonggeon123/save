@@ -154,32 +154,20 @@ def download_file(                                              # 이 함수는 
 
 
 def get_storage_usage(user_id: int, storage_root: str = DEFAULT_STORAGE) -> int:
-    """
-    사용자가 현재 사용 중인 전체 파일 용량을 계산합니다.
-
-    반환값은 Byte 단위입니다.
-    예: 1MB 파일 1개 → 1048576
-    """
-
-    # 사용자별 저장 폴더 경로를 만듭니다.
-    # 예: storage/1
     user_folder = Path(storage_root) / str(user_id)
 
-    # 사용자 폴더가 없으면 사용량은 0Byte입니다.
+   
     if not user_folder.exists():
         return 0
 
-    # 전체 파일 용량을 저장할 변수입니다.
     total_size = 0
 
-    # 사용자 폴더 안의 파일과 하위 폴더를 모두 확인합니다.
     for file_path in user_folder.rglob("*"):
 
-        # 폴더는 제외하고 실제 파일만 계산합니다.
+      
         if file_path.is_file():
             total_size += file_path.stat().st_size
 
-    # 계산된 전체 용량을 Byte 단위로 반환합니다.
     return total_size
 
 

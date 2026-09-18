@@ -88,31 +88,15 @@ async def upload_file(                                                          
     user_folder.mkdir(parents=True, exist_ok=True)                                  # storage/1 폴더가 없으면 새로 만들기 
 
     if upload_file.filename is None:
-        raise HTTPException(
-            status_code=400,
-            detail="파일 이름이 없습니다.",
-        )
+        raise HTTPException(status_code=400, detail="파일 이름이 없습니다.")
 
-    save_path = get_unique_path(                                                    # 지정할 파일 경로 정하기
-        user_folder,                                                                 # 같은 이름이 이미 있으면 _1 처럼 바꿔짐
-        upload_file.filename,
-    )
+    save_path = get_unique_path(user_folder, upload_file.filename)
+   
+    with save_path.open("wb") as file:
+        shutil.copyfileobj(upload_file.file, file)
 
-    try:                                                                            # 파일 실제 저장 부분 
-        with save_path.open("wb") as file:                                          # save_path 저장할 위치                       
-            shutil.copyfileobj(upload_file.file, file)                              # copyfileobj 업로드된 파일을 저장위치로 복사 (upload_file.file 업로드된 파일)
-
-    except Exception as error:
-        raise HTTPException(
-            status_code=500,
-            detail=f"파일 저장 실패: {error}",
-        )
-
-    
-     # 실제 저장된 파일의 크기를 확인합니다.
     file_size = save_path.stat().st_size
 
-    # 파일의 메타데이터를 DB에 저장합니다.
     with db() as cursor:
         cursor.execute(
             """
@@ -120,23 +104,15 @@ async def upload_file(                                                          
             (user_id, file_name, file_size, file_path)
             VALUES (%s, %s, %s, %s)
             """,
-            (
-                user_id,
-                save_path.name,
-                file_size,
-                str(save_path),
-            )
+            (user_id, save_path.name, file_size, str(save_path))
         )
-    
-    
-    
-    return {                                                                            # 파일을 저장한뒤 결과를 json으로 보냄                                            
-        "message": "파일 업로드 완료",                                                   # 성공메세지
-        "file_name": save_path.name,                                                    # 저장된 파일 이름
-        "file_size": save_path.stat().st_size,                                          # 파일 크기
-        "file_path": str(save_path),                                                    # 저장된 위치        
+
+    return {
+        "message": "파일 업로드 완료",
+        "file_name": save_path.name,
+        "file_size": save_path.stat().st_size,
+        "file_path": str(save_path),
     }
-    
     
     
     
