@@ -4,18 +4,13 @@
 비밀번호와 인증번호는 평문으로 DB에 저장하지 않음
 """
 from __future__ import annotations
-# secrets: 인증번호, 토큰 랜덤 값, smtplib: Gmail SMTP 서버로 인증 이메일 발송
 import os, secrets, smtplib
-# 인증번호 유효시간 계산
 from datetime import datetime, timedelta, timezone
-# 이메일 제목, 수신자, 본문 구성
 from email.message import EmailMessage
-# APIRouter: API 주소들 묶음, HTTPException: 오류 응답 생성
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 import pymysql
-# 클라이언트가 보낸 JSON 형식 검사
-from .auth_db import db, ensure_auth_table, hash_password, verify_password
+from .auth_db import db, ensure_auth_table, ensure_admin_column, hash_password, verify_password
 
 # 모든 인증 URL 앞에 /api를 붙이는 라우터
 # (예: http://localhost:8000/api/login)
@@ -31,8 +26,13 @@ class EmailRequest(BaseModel):
 # Pydantic이 자동으로 검사
 class SignupRequest(BaseModel):
     email: EmailStr
+<<<<<<< HEAD
     name: str = Field(min_length=1, max_length=10)
     password: str = Field(min_length=10, max_length=20)
+=======
+    name: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=10, max_length=128)
+>>>>>>> 796341ad1b3e3e19cb77df3b77338d7dff76a471
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
 
 # 로그인 요청 형식
@@ -50,7 +50,7 @@ class PasswordResetRequest(BaseModel):
     name: str = Field(min_length=1, max_length=10)
     email: EmailStr
     verification_code: str = Field(min_length=6, max_length=6, pattern=r"^[0-9]{6}$")
-    password: str = Field(min_length=10, max_length=20)
+    password: str = Field(min_length=10, max_length=128)
 
 
 # 기본 발신 이메일 수정 요청 형식
@@ -61,8 +61,13 @@ class SenderEmailUpdate(BaseModel):
 # 개인정보 수정 요청 형식 password는 선택값
 class ProfileUpdate(BaseModel):
     user_id: int
+<<<<<<< HEAD
     name: str = Field(min_length=1, max_length=10)
     password: str | None = Field(default=None, min_length=10, max_length=20)
+=======
+    name: str = Field(min_length=1, max_length=50)
+    password: str | None = Field(default=None, min_length=10, max_length=128)
+>>>>>>> 796341ad1b3e3e19cb77df3b77338d7dff76a471
 
 # 인증번호 확인 요청 형식
 class CodeCheckRequest(BaseModel):
@@ -78,8 +83,8 @@ def validate_gmail(email: str) -> None:
 # 회원가입과 비밀번호 변경에 공통 적용하는 비밀번호 검증
 def validate_password(password: str) -> None:
     """영문과 숫자를 포함한 ASCII 10자 이상 비밀번호인지 검사"""
-    if len(password) < 10 or len(password) > 20 or not all("!" <= ch <= "~" for ch in password):
-        raise HTTPException(422, "비밀번호는 영문·숫자·특수문자로 10자 이상 20자 이하 입력하세요.")
+    if len(password) < 10 or not all("!" <= ch <= "~" for ch in password):
+        raise HTTPException(422, "비밀번호는 영문·숫자·특수문자로 10자 이상 입력하세요.")
     if not any(ch.isascii() and ch.isalpha() for ch in password) or not any(ch.isdigit() for ch in password):
         raise HTTPException(422, "비밀번호에는 영문과 숫자를 각각 하나 이상 포함하세요.")
 
@@ -409,5 +414,3 @@ def update_profile(request: ProfileUpdate):
         else:
             c.execute("UPDATE `USER` SET name=%s WHERE user_id=%s", (request.name, request.user_id))
     return {"saved": True, "message": "개인정보가 수정되었습니다."}
-
-

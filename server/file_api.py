@@ -84,7 +84,7 @@ async def upload_file(                                                          
     user_id: int,                                                                   # 파일을 올린 사용자 번호
     upload_file: UploadFile = File(...),                                            # 실제 업로드한 파일
 ):
-    user_folder = Path("storage") / str(user_id)                                    # 사용자별 폴더 경로를 만드는 코드   (사용자 번호가 1이라면 storage/1 이라는 경로 생성)
+    user_folder = Path(__file__).resolve().parents[1] / "storage" / str(user_id)
     user_folder.mkdir(parents=True, exist_ok=True)                                  # storage/1 폴더가 없으면 새로 만들기 
 
     if upload_file.filename is None:
@@ -403,3 +403,4 @@ def delete_user_folder(user_id: int, folder_name: str):
         "message": "폴더 삭제 완료",
         "folder_name": folder_name
     }
+

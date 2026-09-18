@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sys  
 from PySide6.QtWidgets import QApplication, QStackedWidget  # 여러 페이지를 겹쳐 관리합
+from PySide6.QtCore import QTimer
 
 from client.auth_window import LoginPage      # 로그인 페이지
 from client.sign import SignupWindow          # 회원가입 페이지
@@ -15,7 +16,12 @@ from client.session import UserSession
 from PySide6.QtUiTools import QUiLoader
 from client.file_client import FilePage                                                     # 파일 파트 추가
 from client.file_settings import File_Setting_Page         
+
+from client.ui_common import PROJECT_ROOT
+from client.mail_management_window import MailManagementController
+
 from client.ui_common import PROJECT_ROOT, logo_pixmap
+
 
 
 class JewelClient(QStackedWidget):
@@ -36,9 +42,9 @@ class JewelClient(QStackedWidget):
         # 회원가입 완료 후 로그인화면 돌아오도록
         self.signup_page = SignupWindow(go_login=self.show_login)  
         # 로그인 후 메인 페이지
-        self.dashboard_page = DashboardPage(self.show_login, self.show_settings, self.show_file)  
+        self.dashboard_page = DashboardPage(self.show_login, self.show_settings, self.show_file, self.show_mail)
         # 설정 메뉴 페이지
-        self.settings_page = SettingsPage(self.show_dashboard, self.show_login, self.show_personal, self.show_file_settings) 
+        self.settings_page = SettingsPage(self.show_dashboard, self.show_login, self.show_personal, self.show_file_settings, self.show_mail_settings)
         # 개인설정 상세 페이지
         self.personal_page = PersonalSettingsPage(self.show_settings, self.show_login, self.session)
         self.admin_page = AdminPage(self.show_login, self.session)
@@ -96,6 +102,15 @@ class JewelClient(QStackedWidget):
         """메인 화면에서 설정 메뉴로 이동"""
         # 설정 메뉴 페이지를 표시
         self.setCurrentWidget(self.settings_page) 
+
+    def show_mail(self):
+        if not hasattr(self, "mail_controller"):
+            self.mail_controller = MailManagementController()
+        self.mail_controller.show()
+
+    def show_mail_settings(self):
+        self.show_mail()
+        QTimer.singleShot(300, self.mail_controller.open_mail_settings)
 
     def show_personal(self):
         """설정 메뉴에서 개인설정 페이지로 이동"""

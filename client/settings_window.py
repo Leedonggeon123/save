@@ -17,13 +17,14 @@ class SettingsPage(QWidget):
     """설정 메뉴 화면"""
 
     # go_back은 메인 화면, logout은 로그인 화면, show_personal은 개인설정으로 연결
-    def __init__(self, go_back, logout, show_personal, show_file_settings):
+    def __init__(self, go_back, logout, show_personal, show_file_settings, show_mail_settings=None):
         super().__init__()
         self.go_back = go_back
         self.logout = logout
         self.show_personal = show_personal
         
         self.show_file_settings = show_file_settings                    # 파일 설정 버튼을 클릭했을떄
+        self.show_mail_settings = show_mail_settings
         
         self.setStyleSheet(
             "QWidget { background: white; }"
@@ -39,7 +40,16 @@ class SettingsPage(QWidget):
         root.setSpacing(0)
 
         header = QHBoxLayout()
+
         header.addWidget(BrandHeader("JEWEL"))
+
+        header.addStretch()
+        logout_button = LogoutButton()
+        logout_button.clicked.connect(self.logout)
+        header.addWidget(logout_button)
+
+        root.addLayout(header)
+        root.addStretch(1)
         header.addStretch()
         logout_button = LogoutButton()
         logout_button.clicked.connect(self.logout)
@@ -72,7 +82,8 @@ class SettingsPage(QWidget):
 
     # 메일 설정. 연결 안 됨
     def open_mail(self):
-        print("메일설정 버튼 클릭", flush=True)
+        if self.show_mail_settings:
+            self.show_mail_settings()
 
     # 파일 설정. 연결 안 됨
     def open_file(self):
@@ -116,6 +127,9 @@ class PersonalSettingsPage(QWidget):
         side = QVBoxLayout(sidebar)
         side.setContentsMargins(14, 18, 14, 20)
         side.setSpacing(8)
+
+        side.addSpacing(18)
+
         side.addWidget(BrandHeader("JEWEL"))
         side.addSpacing(18)
 
