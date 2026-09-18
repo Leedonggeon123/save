@@ -50,12 +50,6 @@ class SettingsPage(QWidget):
 
         root.addLayout(header)
         root.addStretch(1)
-        header.addStretch()
-        logout_button = LogoutButton()
-        logout_button.clicked.connect(self.logout)
-        header.addWidget(logout_button)
-        root.addLayout(header)
-        root.addStretch(1)
 
         menu = QHBoxLayout()
         menu.setSpacing(152)
@@ -127,8 +121,6 @@ class PersonalSettingsPage(QWidget):
         side = QVBoxLayout(sidebar)
         side.setContentsMargins(14, 18, 14, 20)
         side.setSpacing(8)
-
-        side.addSpacing(18)
 
         side.addWidget(BrandHeader("JEWEL"))
         side.addSpacing(18)
